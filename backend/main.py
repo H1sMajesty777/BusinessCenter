@@ -21,19 +21,19 @@ cursor.execute("""
 tables = cursor.fetchall()
 
 print('\n' + '='*50)
-print('📊 БАЗА ДАННЫХ "project"')
+print(' БАЗА ДАННЫХ "project"')
 print('='*50)
 
 for table in tables:
     table_name = table[0]
     cursor.execute(SQL("SELECT COUNT(*) FROM {}").format(Identifier(table_name)))
     count = cursor.fetchone()[0]
-    print(f'✅ {table_name}: {count} записей')
+    print(f' {table_name}: {count} записей')
 
 print('='*50)
 
 # Пример данных из offices
-print('\n🏢 ОФИСЫ (пример):')
+print('\n ОФИСЫ (пример):')
 cursor.execute("""
     SELECT office_number, floor, area_sqm, price_per_month 
     FROM offices LIMIT 5
