@@ -1,4 +1,4 @@
-services:
+﻿services:
   db:
     image: postgres:16
     container_name: business_center_db
@@ -11,19 +11,40 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/full_bd.sql:/docker-entrypoint-initdb.d/full_bd.sql
-    restart: unless-stopped
+    networks:
+      - app-network
+
+  api:
+    build: .
+    container_name: business_center_api
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: admin
+      DB_NAME: project
+    depends_on:
+      - db
+    networks:
+      - app-network
 
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: business_center_pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: 	postgres
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
       - "8080:80"
     depends_on:
       - db
-    restart: unless-stopped
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:

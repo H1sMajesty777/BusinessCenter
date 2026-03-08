@@ -45,4 +45,4 @@ print('='*50 + '\n')
 
 cursor.close()
 conn.close()
-print('✅ Подключение успешно!\n')
+print('Подключение успешно!\n')
