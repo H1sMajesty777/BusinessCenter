@@ -5,8 +5,7 @@ from api.models.office import OfficeCreate, OfficeUpdate
 
 router = APIRouter()
 
-def office_to_dict(row):
-    """Конвертирует строку из БД в словарь"""
+def office_to_dict(row): # из БД в словарь
     return {
         'id': row[0], 
         'office_number': row[1], 

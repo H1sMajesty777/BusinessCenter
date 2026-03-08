@@ -2,7 +2,6 @@ import psycopg
 import os
 
 def get_db():
-    """Подключение к базе данных"""
     return psycopg.connect(
         host=os.getenv('DB_HOST', 'localhost'),
         port=os.getenv('DB_PORT', 5432),
