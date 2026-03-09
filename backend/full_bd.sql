@@ -42,6 +42,12 @@ CREATE TABLE users (
 );
 CREATE INDEX idx_users_role ON users(role_id);
 
+INSERT INTO users (login, password_hash, email, full_name, role_id, is_active)
+VALUES 
+('admin', 'admin123', 'admin@office.ru', 'Админ', 1, TRUE),
+('manager', 'man123', 'man@office.ru', 'Менеджер', 2, TRUE),
+('client', 'cli123', 'cli@office.ru', 'Клиент', 3, TRUE);
+
 -- 004 offices
 CREATE TABLE offices (
     id SERIAL PRIMARY KEY,

@@ -15,6 +15,7 @@ app.add_middleware(
 # Подключаем роутеры
 from api.routers import offices
 app.include_router(offices.router)
+app.include_router(users.router)
 
 @app.get('/')
 def root():
