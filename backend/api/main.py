@@ -1,22 +1,21 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title='Business Center API')
+app = FastAPI(title="Business Center API")
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Подключаем роутеры
-from api.routers import offices
-app.include_router(offices.router)
+from api.routers import auth, users, offices
+app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(offices.router)
 
-@app.get('/')
+@app.get("/")
 def root():
-    return {'message': 'Business Center API', 'docs': '/docs'}
+    return {"message": "API работает", "docs": "/docs"}
