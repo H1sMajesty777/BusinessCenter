@@ -11,10 +11,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from api.routers import auth, users, offices
+from api.routers import auth, users, offices, applications, contracts, payments, office_views, audit
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(offices.router)
+app.include_router(applications.router)
+app.include_router(contracts.router)
+app.include_router(payments.router)
+app.include_router(office_views.router)
+app.include_router(audit.router)
 
 @app.get("/")
 def root():
