@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
 
 class LoginRequest(BaseModel):
     login: str
@@ -15,18 +14,12 @@ class Token(BaseModel):
 class UserCreate(BaseModel):
     login: str
     password: str
-    email: str
-    phone: Optional[str] = None
-    full_name: Optional[str] = None
+    email: Optional[str] = None
     role_id: int = 3
-    is_active: bool = True
 
 class User(BaseModel):
     id: int
     login: str
-    email: str
-    phone: Optional[str] = None
-    full_name: Optional[str] = None
+    email: Optional[str] = None
     role_id: int
-    created_at: datetime
     is_active: bool

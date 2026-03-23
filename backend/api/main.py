@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Business Center API")
+app = FastAPI(
+    title="Business Center API",
+    description="API для системы учета аренды офисов",
+    version="0.1.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -12,6 +16,7 @@ app.add_middleware(
 )
 
 from api.routers import auth, users, offices, applications, contracts, payments, office_views, audit
+
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(offices.router)
