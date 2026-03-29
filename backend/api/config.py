@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Настройки приложения Business Center
-Подключение к PostgreSQL в Docker контейнере
+Подключение к PostgreSQL и Redis
 """
 
 from typing import Optional
@@ -45,7 +45,6 @@ class Settings(BaseSettings):
     # 🗄️ POSTGRESQL НАСТРОЙКИ (DOCKER)
     # ===================================================================
     
-    # ✅ ИСПРАВЛЕНО: localhost для локального запуска + Docker port forwarding
     DB_HOST: str = Field(
         default="localhost",
         description="Хост PostgreSQL (localhost при локальном запуске)"
@@ -74,7 +73,7 @@ class Settings(BaseSettings):
     )
     
     # ===================================================================
-    # 🗂️ REDIS НАСТРОЙКИ
+    # 🗂️ REDIS НАСТРОЙКИ (ДЛЯ TOKEN BLACKLIST И REFRESH)
     # ===================================================================
     
     REDIS_HOST: str = Field(
@@ -107,7 +106,6 @@ class Settings(BaseSettings):
     
     ENVIRONMENT: str = Field(
         default="development",
-        pattern="^(development|staging|production)$",
         description="Окружение: development, staging, production"
     )
     
@@ -122,7 +120,7 @@ class Settings(BaseSettings):
     
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf-8",  # ✅ Читаем .env как UTF-8
+        env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"
     )
@@ -149,31 +147,12 @@ class Settings(BaseSettings):
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
     @property
-    def async_database_url(self) -> str:
-        """Асинхронный URL для PostgreSQL"""
-        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-    
-    @property
     def redis_url(self) -> str:
         """URL для подключения к Redis"""
         if self.REDIS_PASSWORD:
             return f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
-    
-    @property
-    def is_production(self) -> bool:
-        """Проверка production окружения"""
-        return self.ENVIRONMENT == "production"
-    
-    @property
-    def is_development(self) -> bool:
-        """Проверка development окружения"""
-        return self.ENVIRONMENT == "development"
 
-
-# =======================================================================
-# СОЗДАНИЕ ЭКЗЕМПЛЯРА НАСТРОЕК
-# =======================================================================
 
 settings = Settings()
 

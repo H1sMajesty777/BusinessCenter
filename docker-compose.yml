@@ -1,6 +1,7 @@
 ﻿version: '3.8'
 
 services:
+  # PostgreSQL
   db:
     image: postgres:16
     container_name: business_center_db
@@ -8,6 +9,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: project
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     ports:
       - "5432:5432"
     volumes:
@@ -15,6 +17,7 @@ services:
     networks:
       - app-network
 
+  # Redis (для token blacklist и refresh tokens)
   redis:
     image: redis:7-alpine
     container_name: business_center_redis
@@ -26,28 +29,19 @@ services:
       - app-network
     command: redis-server --appendonly yes
 
-  api:
-    build: .
-    container_name: business_center_api
-    ports:
-      - "8000:8000"
+  # pgAdmin (опционально)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: business_center_pgadmin
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: admin
-      DB_NAME: project
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      JWT_SECRET_KEY: your-super-secret-key-change-in-production
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
     depends_on:
       - db
-      - redis
     networks:
       - app-network
-    volumes:
-      - ./backend:/app
-    command: uvicorn api.main:app --reload --host 0.0.0.0
 
 volumes:
   postgres_data:
@@ -55,3 +49,4 @@ volumes:
 
 networks:
   app-network:
+    driver: bridge
