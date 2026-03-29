@@ -45,9 +45,10 @@ class Settings(BaseSettings):
     # 🗄️ POSTGRESQL НАСТРОЙКИ (DOCKER)
     # ===================================================================
     
+    # ✅ ИСПРАВЛЕНО: localhost для локального запуска + Docker port forwarding
     DB_HOST: str = Field(
-        default="host.docker.internal",  # ← Docker Desktop на Windows
-        description="Хост PostgreSQL (Docker контейнер)"
+        default="localhost",
+        description="Хост PostgreSQL (localhost при локальном запуске)"
     )
     
     DB_PORT: int = Field(
@@ -121,7 +122,7 @@ class Settings(BaseSettings):
     
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf-8",
+        env_file_encoding="utf-8",  # ✅ Читаем .env как UTF-8
         case_sensitive=True,
         extra="ignore"
     )

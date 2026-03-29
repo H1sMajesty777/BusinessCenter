@@ -3,9 +3,7 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 
 
-# ========== ДЛЯ СОЗДАНИЯ ==========
 class OfficeCreate(BaseModel):
-    """Создание нового офиса"""
     office_number: str = Field(..., min_length=1, max_length=20, description="Номер офиса")
     floor: int = Field(..., ge=1, le=50, description="Этаж")
     area_sqm: float = Field(..., gt=0, description="Площадь в м²")
@@ -15,9 +13,11 @@ class OfficeCreate(BaseModel):
     is_free: bool = Field(default=True, description="Свободен ли офис")
 
 
-# ========== ДЛЯ ОБНОВЛЕНИЯ ==========
 class OfficeUpdate(BaseModel):
-    """Обновление офиса (все поля необязательны)"""
+    """
+    Модель для обновления офиса
+
+    """
     office_number: Optional[str] = Field(None, min_length=1, max_length=20)
     floor: Optional[int] = Field(None, ge=1, le=50)
     area_sqm: Optional[float] = Field(None, gt=0)
@@ -27,9 +27,11 @@ class OfficeUpdate(BaseModel):
     is_free: Optional[bool] = Field(None)
 
 
-# ========== ДЛЯ ОТВЕТА (RESPONSE) ==========
 class OfficeResponse(BaseModel):
-    """Ответ с данными офиса"""
+    """
+    Модель для ответа с данными офиса
+    
+    """
     id: int
     office_number: str
     floor: int

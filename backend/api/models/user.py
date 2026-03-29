@@ -3,9 +3,11 @@ from typing import Optional
 from datetime import datetime
 
 
-# ========== ДЛЯ СОЗДАНИЯ ==========
 class UserCreate(BaseModel):
-    """Создание нового пользователя"""
+    """
+    Модель для создания нового пользователя
+    
+    """
     login: str = Field(..., min_length=3, max_length=50, description="Логин")
     password: str = Field(..., min_length=6, max_length=100, description="Пароль")
     email: str = Field(..., description="Email")
@@ -15,9 +17,11 @@ class UserCreate(BaseModel):
     is_active: bool = Field(default=True, description="Активен ли пользователь")
 
 
-# ========== ДЛЯ ОБНОВЛЕНИЯ ==========
 class UserUpdate(BaseModel):
-    """Обновление пользователя (все поля необязательны)"""
+    """
+    Модель для обновления пользователя
+    
+    """
     email: Optional[str] = Field(None, description="Email")
     phone: Optional[str] = Field(None, max_length=20, description="Телефон")
     full_name: Optional[str] = Field(None, max_length=100, description="ФИО")
@@ -26,9 +30,11 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = Field(None, description="Активен ли пользователь")
 
 
-# ========== ДЛЯ ОТВЕТА (RESPONSE) ==========
 class UserResponse(BaseModel):
-    """Ответ с данными пользователя"""
+    """
+    Модель для ответа с данными пользователя
+    
+    """
     id: int
     login: str
     email: str
@@ -42,26 +48,34 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
-# ========== ДЛЯ АВТОРИЗАЦИИ ==========
 class UserLogin(BaseModel):
-    """Вход в систему"""
+    """
+    Модель для входа в систему
+    
+    """
     login: str = Field(..., description="Логин")
     password: str = Field(..., description="Пароль")
 
 
 class Token(BaseModel):
-    """JWT токен"""
+    """
+    Модель для JWT токена
+    
+    """
     access_token: str
     token_type: str = "bearer"
     expires_in: int = 3600
 
 
 class TokenData(BaseModel):
-    """Данные из токена"""
+    """
+    Модель для данных из токена
+    
+    """
     sub: Optional[str] = None
     role_id: Optional[int] = None
     exp: Optional[datetime] = None
 
 
-# чтобы auth.py работал!
+# для совместимости с auth.py
 LoginRequest = UserLogin

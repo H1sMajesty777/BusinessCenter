@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Подключение к базам данных
-PostgreSQL (Docker) + Redis (Docker)
+Подключение к PostgreSQL и Redis с полной поддержкой UTF-8
 """
 
-import psycopg  # ← psycopg v3
+import psycopg
+from psycopg.rows import dict_row  # ← Для удобного доступа к колонкам по имени
 import redis
 from api.config import settings
 
@@ -13,10 +13,10 @@ _redis_client = None
 
 def get_db():
     """
-    Подключение к PostgreSQL (Docker)
+    Подключение к PostgreSQL с гарантированной поддержкой UTF-8
     
     Returns:
-        psycopg.Connection: Объект подключения к базе данных
+        psycopg.Connection: Объект подключения с UTF-8 кодировкой
     """
     conn = psycopg.connect(
         host=settings.DB_HOST,
@@ -24,15 +24,19 @@ def get_db():
         user=settings.DB_USER,
         password=settings.DB_PASSWORD,
         dbname=settings.DB_NAME,
+        # ✅ КЛЮЧЕВЫЕ ПАРАМЕТРЫ ДЛЯ UTF-8:
+        client_encoding='UTF8',              # Кодировка клиента
+        options='-c client_encoding=UTF8',   # Принудительно для сессии
         connect_timeout=5
-        # sslmode не нужен для localhost!
     )
+    # ✅ Возвращаем строки как словари (удобнее: row['description'])
+    conn.row_factory = dict_row
     return conn
 
 
 def get_redis():
     """
-    Подключение к Redis (Docker)
+    Подключение к Redis с поддержкой UTF-8
     
     Returns:
         redis.Redis: Объект подключения к Redis
@@ -43,7 +47,10 @@ def get_redis():
             host=settings.REDIS_HOST,
             port=settings.REDIS_PORT,
             db=settings.REDIS_DB,
-            decode_responses=True
+            password=settings.REDIS_PASSWORD,
+            # ✅ Явно указываем кодировку:
+            encoding='utf-8',
+            decode_responses=True  # Автоматически декодирует bytes → str
         )
     return _redis_client
 

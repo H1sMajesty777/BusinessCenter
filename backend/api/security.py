@@ -5,7 +5,6 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from api.config import settings
 
-# Настройка bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -14,22 +13,28 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Проверка пароля"""
+def verify_password(plain_password: str, hashed_password) -> bool:
+    """
+    Проверка пароля
+    
+    ✅ ИСПРАВЛЕНО: обрабатываем bytes из базы данных
+    """
     try:
+        # ✅ Если хеш пришёл как bytes (из psycopg) — декодируем
+        if isinstance(hashed_password, bytes):
+            hashed_password = hashed_password.decode('utf-8')
+        
+        # ✅ Если пароль пришёл как bytes (маловероятно) — тоже декодируем
+        if isinstance(plain_password, bytes):
+            plain_password = plain_password.decode('utf-8')
+        
         return pwd_context.verify(plain_password, hashed_password)
     except Exception:
         return False
 
 
 def create_token(data: dict, expire_minutes: int) -> str:
-    """
-    Создание JWT токена
-    
-    Args:
-         Данные для токена (sub, role_id, etc.)
-        expire_minutes: Время жизни в минутах
-    """
+    """Создание JWT токена"""
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
     to_encode.update({"exp": expire, "iat": datetime.utcnow()})
@@ -46,5 +51,5 @@ def decode_token(token: str) -> Optional[dict]:
         return None
 
 
-# Алиас для совместимости со старым кодом
+# Алиас для совместимости
 create_access_token = create_token
