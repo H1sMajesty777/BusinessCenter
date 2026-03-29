@@ -1,87 +1,43 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from api.database import get_db
-from api.models.audit import AuditLogCreate
-from typing import List, Optional, Dict, Any
+from api.security import decode_token
 
 router = APIRouter()
+security = HTTPBearer(auto_error=False)
 
-def audit_to_dict(row) -> dict:
-    return {
-        "id": row[0],
-        "user_id": row[1],
-        "action_type": row[2],
-        "table_name": row[3],
-        "record_id": row[4],
-        "old_values": row[5],
-        "new_values": row[6],
-        "created_at": str(row[7])
-    }
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Нет токена")
+    token = credentials.credentials
+    payload = decode_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Неверный токен")
+    return payload
 
-@router.get("/api/audit", tags=["Аудит"])
-def get_audit_logs(table_name: Optional[str] = None, user_id: Optional[int] = None, limit: int = 100):
+def require_admin(current_user: dict):
+    if current_user.get("role_id") != 1:
+        raise HTTPException(status_code=403, detail="Только администраторы")
+
+@router.get("/api/audit", tags=["Audit"])
+def get_audit_log(current_user: dict = Depends(get_current_user)):
+    """
+    Просмотр журнала действий
+    Доступ: ТОЛЬКО АДМИН
+    """
+    require_admin(current_user)
+    
     conn = get_db()
     cursor = conn.cursor()
-    
-    query = "SELECT id, user_id, action_type, table_name, record_id, old_values, new_values, created_at FROM audit_log WHERE 1=1"
-    params = []
-    
-    if table_name:
-        query += " AND table_name = %s"
-        params.append(table_name)
-    if user_id:
-        query += " AND user_id = %s"
-        params.append(user_id)
-    
-    query += " ORDER BY created_at DESC LIMIT %s"
-    params.append(limit)
-    
-    cursor.execute(query, params)
+    cursor.execute("""
+        SELECT a.id, a.user_id, u.login, a.action_type, a.table_name, a.record_id, a.created_at 
+        FROM audit_log a 
+        LEFT JOIN users u ON a.user_id = u.id 
+        ORDER BY a.created_at DESC 
+        LIMIT 100
+    """)
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
     
-    return [audit_to_dict(r) for r in rows]
-
-@router.get("/api/audit/{log_id}", tags=["Аудит"])
-def get_audit_log(log_id: int):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, user_id, action_type, table_name, record_id, old_values, new_values, created_at FROM audit_log WHERE id = %s", (log_id,))
-    row = cursor.fetchone()
-    cursor.close()
-    conn.close()
-    
-    if not row:
-        raise HTTPException(status_code=404, detail="Запись аудита не найдена")
-    
-    return audit_to_dict(row)
-
-@router.post("/api/audit", status_code=201, tags=["Аудит"])
-def create_audit_log(log: AuditLogCreate):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO audit_log (user_id, action_type, table_name, record_id, old_values, new_values) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
-        (log.user_id, log.action_type, log.table_name, log.record_id, log.old_values, log.new_values)
-    )
-    log_id = cursor.fetchone()[0]
-    conn.commit()
-    cursor.close()
-    conn.close()
-    
-    return {"id": log_id, "message": "Запись аудита создана"}
-
-@router.delete("/api/audit/{log_id}", tags=["Аудит"])
-def delete_audit_log(log_id: int):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM audit_log WHERE id = %s RETURNING id", (log_id,))
-    if not cursor.fetchone():
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=404, detail="Запись аудита не найдена")
-    conn.commit()
-    cursor.close()
-    conn.close()
-    
-    return {"message": f"Запись {log_id} удалена"}
+    return [{"id": r[0], "user_id": r[1], "user_login": r[2], "action_type": r[3], "table_name": r[4], "record_id": r[5], "created_at": str(r[6])} for r in rows]

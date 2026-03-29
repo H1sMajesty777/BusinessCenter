@@ -1,22 +1,42 @@
 # -*- coding: utf-8 -*-
-import psycopg
+"""
+Подключение к базам данных
+PostgreSQL (Docker) + Redis (Docker)
+"""
+
+import psycopg  # ← psycopg v3
 import redis
 from api.config import settings
 
 _redis_client = None
 
+
 def get_db():
-    """Подключение к PostgreSQL"""
-    return psycopg.connect(
+    """
+    Подключение к PostgreSQL (Docker)
+    
+    Returns:
+        psycopg.Connection: Объект подключения к базе данных
+    """
+    conn = psycopg.connect(
         host=settings.DB_HOST,
         port=settings.DB_PORT,
         user=settings.DB_USER,
         password=settings.DB_PASSWORD,
-        dbname=settings.DB_NAME
+        dbname=settings.DB_NAME,
+        connect_timeout=5
+        # sslmode не нужен для localhost!
     )
+    return conn
+
 
 def get_redis():
-    """Подключение к Redis"""
+    """
+    Подключение к Redis (Docker)
+    
+    Returns:
+        redis.Redis: Объект подключения к Redis
+    """
     global _redis_client
     if _redis_client is None:
         _redis_client = redis.Redis(
@@ -26,6 +46,7 @@ def get_redis():
             decode_responses=True
         )
     return _redis_client
+
 
 def close_redis():
     """Закрыть подключение к Redis"""
