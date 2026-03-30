@@ -1,4 +1,3 @@
-```markdown
 # 🏢 Business Center - AI система управления арендой офисов
 
 <div align="center">
@@ -39,14 +38,14 @@ Business Center - это комплексная система для управ
 
 ### 1. Клонирование репозитория
 
-```bash
+```
 git clone https://github.com/H1sMajesty777/BusinessCenter
 cd BusinessCenter
 ```
 
 ### 2. Запуск Docker контейнеров
 
-```bash
+```
 # Сборка и запуск всех сервисов
 docker-compose up -d --build
 
