@@ -1,6 +1,4 @@
-﻿version: '3.8'
-
-services:
+﻿services:
   # PostgreSQL
   db:
     image: postgres:16
@@ -16,8 +14,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Redis (для token blacklist и refresh tokens)
+  # Redis
   redis:
     image: redis:7-alpine
     container_name: business_center_redis
@@ -29,7 +32,32 @@ services:
       - app-network
     command: redis-server --appendonly yes
 
-  # pgAdmin (опционально)
+  # FastAPI Backend
+  api:
+    build: .
+    container_name: business_center_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: admin
+      DB_NAME: project
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - app-network
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # pgAdmin
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: business_center_pgadmin

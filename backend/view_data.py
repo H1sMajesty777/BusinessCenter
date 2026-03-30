@@ -9,7 +9,7 @@ if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
 
 conn = psycopg.connect(
-    host='localhost',
+    host='db',
     user='postgres',
     password='admin',
     dbname='project',
