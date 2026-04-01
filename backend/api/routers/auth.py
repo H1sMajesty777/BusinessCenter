@@ -70,12 +70,6 @@ def login(login_request: LoginRequest = Body(...)):
         HTTPException: 401 если логин или пароль неверны
         HTTPException: 403 если аккаунт заблокирован
     
-    Example:
-        POST /api/auth/login
-        {
-            "login": "admin",
-            "password": "admin123"
-        }
     """
     conn = get_db()
     cursor = conn.cursor()
@@ -155,11 +149,6 @@ def refresh_token(token_data: TokenRefresh = Body(...)):
         HTTPException: 401 если refresh токен неверный или отозван
         HTTPException: 403 если пользователь заблокирован
     
-    Example:
-        POST /api/auth/refresh
-        {
-            "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
-        }
     """
     # Декодируем refresh токен
     payload = decode_token(token_data.refresh_token, expected_type="refresh")

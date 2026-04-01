@@ -12,7 +12,6 @@ from api.database import get_db
 from api.security import decode_token
 from api.models.office import OfficeCreate, OfficeUpdate, OfficeResponse
 
-# ✅ Router с правильным префиксом
 router = APIRouter(prefix="/api/offices", tags=["Offices"])
 security = HTTPBearer(auto_error=False)
 

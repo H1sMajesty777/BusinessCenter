@@ -12,14 +12,10 @@ from api.database import get_db
 from api.security import decode_token
 from api.models.payment import PaymentCreate, PaymentUpdate, PaymentResponse
 
-# ✅ Router с правильным префиксом
+# Router с правильным префиксом
 router = APIRouter(prefix="/api/payments", tags=["Payments"])
 security = HTTPBearer(auto_error=False)
 
-
-# ===================================================================
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-# ===================================================================
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
@@ -131,10 +127,6 @@ def get_all_payments(
     Просмотр всех платежей
     
     Доступ: Админ/Менеджер (role_id 1 или 2)
-    
-    Args:
-        limit: Максимальное количество записей для возврата (1-1000)
-        current_user: Текущий пользователь из токена
     
     Returns:
         List[dict]: Список всех платежей с данными договоров и пользователей

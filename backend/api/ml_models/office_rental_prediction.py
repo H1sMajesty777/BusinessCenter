@@ -1,6 +1,4 @@
-﻿# backend/api/ml_models/office_rental_prediction.py
-# -*- coding: utf-8 -*-
-"""
+﻿"""
 Office Rental Prediction - Real ML implementation
 Прогнозирование вероятности аренды офиса на основе:
 - просмотров офисов
@@ -62,11 +60,11 @@ class OfficeRentalPredictor:
                 self.model = joblib.load(self.model_path)
                 self.scaler = joblib.load(self.scaler_path)
                 self.is_trained = True
-                print(f"✅ Модель загружена из {self.model_path}")
+                print(f"Модель загружена из {self.model_path}")
             else:
-                print("ℹ️ Сохранённая модель не найдена, будет создана новая")
+                print("ℹСохранённая модель не найдена, будет создана новая")
         except Exception as e:
-            print(f"⚠️ Ошибка загрузки модели: {e}")
+            print(f"Ошибка загрузки модели: {e}")
     
     def _save_model(self):
         """Сохранение модели"""
@@ -74,9 +72,9 @@ class OfficeRentalPredictor:
             os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
             joblib.dump(self.model, self.model_path)
             joblib.dump(self.scaler, self.scaler_path)
-            print(f"✅ Модель сохранена в {self.model_path}")
+            print(f"Модель сохранена в {self.model_path}")
         except Exception as e:
-            print(f"⚠️ Ошибка сохранения модели: {e}")
+            print(f"Ошибка сохранения модели: {e}")
     
     def _extract_features_from_db(self, conn, office_ids: List[int] = None) -> pd.DataFrame:
         """
@@ -310,7 +308,7 @@ class OfficeRentalPredictor:
         Returns:
             Dict с результатами обучения
         """
-        print("🔄 Начинаем обучение модели...")
+        print("Начинаем обучение модели...")
         
         try:
             # Пытаемся получить реальные данные из БД
@@ -318,16 +316,16 @@ class OfficeRentalPredictor:
             
             if len(df_real) >= 20:  # Достаточно реальных данных
                 df = df_real
-                print(f"✅ Используем реальные данные: {len(df)} записей")
+                print(f"Используем реальные данные: {len(df)} записей")
             else:
                 # Используем синтетические данные
                 df_synth = self._generate_synthetic_data(500)
                 if len(df_real) > 0:
                     df = pd.concat([df_real, df_synth], ignore_index=True)
-                    print(f"🔄 Используем смешанные данные: {len(df_real)} реальных + {len(df_synth)} синтетических")
+                    print(f"Используем смешанные данные: {len(df_real)} реальных + {len(df_synth)} синтетических")
                 else:
                     df = df_synth
-                    print(f"🔄 Используем синтетические данные: {len(df)} записей")
+                    print(f"Используем синтетические данные: {len(df)} записей")
             
             # Подготовка признаков
             feature_cols = [col for col in df.columns if col not in ['office_id', 'target']]
@@ -433,7 +431,7 @@ class OfficeRentalPredictor:
         """Создание эвристической модели на основе правил"""
         self.is_trained = True
         self.model = "heuristic"
-        print("ℹ️ Создана эвристическая модель (запасной вариант)")
+        print("ℹСоздана эвристическая модель (запасной вариант)")
     
     def _get_feature_importance(self) -> List[Dict[str, Any]]:
         """Получение важности признаков"""
@@ -462,7 +460,7 @@ class OfficeRentalPredictor:
             
             return sorted(features, key=lambda x: x['importance'], reverse=True)
         except Exception as e:
-            print(f"⚠️ Ошибка получения важности признаков: {e}")
+            print(f"Ошибка получения важности признаков: {e}")
             return []
     
     def predict_probability(self, conn, office_id: int) -> Dict[str, Any]:
@@ -523,7 +521,7 @@ class OfficeRentalPredictor:
             }
             
         except Exception as e:
-            print(f"❌ Ошибка прогноза: {e}")
+            print(f"Ошибка прогноза: {e}")
             return self._heuristic_prediction_from_db(conn, office_id)
     
     def _heuristic_prediction(self, row: pd.Series) -> Dict[str, Any]:

@@ -1,5 +1,3 @@
-# backend/api/routers/ai_rental_prediction.py
-# -*- coding: utf-8 -*-
 """
 Роуты для AI прогноза аренды офисов
 Расширенная версия с аналитикой и рекомендациями

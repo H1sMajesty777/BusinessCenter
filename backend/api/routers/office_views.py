@@ -12,14 +12,11 @@ from api.database import get_db
 from api.security import decode_token
 from api.models.office_view import OfficeViewCreate, OfficeViewResponse
 
-# ✅ Router с правильным префиксом
+
 router = APIRouter(prefix="/api/office-views", tags=["OfficeViews"])
 security = HTTPBearer(auto_error=False)
 
 
-# ===================================================================
-# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-# ===================================================================
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
