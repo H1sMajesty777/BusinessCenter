@@ -1,8 +1,12 @@
+# backend/api/routers/ai_rental_prediction.py
+# ЗАМЕНИТЕ полностью содержимое на это:
+
 """
 Роуты для AI прогноза аренды офисов
 Расширенная версия с аналитикой и рекомендациями
 """
 
+import numpy as np
 from fastapi import APIRouter, HTTPException, Depends, Query, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional, Dict, Any
@@ -10,6 +14,7 @@ from datetime import datetime, timedelta
 from api.database import get_db
 from api.security import decode_token
 from api.ml_models.office_rental_prediction import rental_predictor
+from api.ml_models import production_predictor
 
 router = APIRouter(prefix="/api/ai/rental-prediction", tags=["AI Rental Prediction"])
 security = HTTPBearer(auto_error=False)
@@ -58,12 +63,6 @@ def train_model(
     Обучение ML модели на исторических данных
     
     Доступ: Только АДМИН
-    
-    Args:
-        force: Принудительное переобучение даже если модель уже есть
-    
-    Returns:
-        dict: Результаты обучения с метриками качества
     """
     require_admin(current_user)
     
@@ -72,10 +71,8 @@ def train_model(
     try:
         result = rental_predictor.train(conn, force_retrain=force)
         
-        status_code = 200 if result.get('status') != 'error' else 500
-        
         return {
-            "success": result.get('status') != 'error',
+            "success": result.get('status') == 'success',
             "message": result.get('message', "Обучение завершено"),
             "details": result
         }
@@ -91,9 +88,6 @@ def get_model_info(current_user: dict = Depends(get_current_user)):
     Информация о текущей модели
     
     Доступ: Админ/Менеджер
-    
-    Returns:
-        dict: Информация о модели (тип, признаки, важность)
     """
     require_admin_or_manager(current_user)
     
@@ -109,12 +103,6 @@ def predict_office_rental(
     Прогноз вероятности аренды конкретного офиса
     
     Доступ: Все авторизованные
-    
-    Args:
-        office_id: ID офиса для прогноза
-    
-    Returns:
-        dict: Прогноз с вероятностью, категорией и факторами
     """
     conn = get_db()
     
@@ -142,12 +130,6 @@ def predict_multiple_offices(
     Массовый прогноз для нескольких офисов
     
     Доступ: Админ/Менеджер
-    
-    Args:
-        office_ids: Строка с ID через запятую (например: "1,5,13,19")
-    
-    Returns:
-        List[dict]: Список прогнозов для каждого офиса
     """
     require_admin_or_manager(current_user)
     
@@ -196,18 +178,6 @@ def get_prediction_summary(
     Сводка прогнозов по всем свободным офисам с фильтрацией
     
     Доступ: Админ/Менеджер
-    
-    Args:
-        floor: Фильтр по этажу
-        min_price: Минимальная цена
-        max_price: Максимальная цена
-        min_probability: Минимальная вероятность (0.0-1.0)
-        category: Фильтр по категории (high/medium/low)
-        sort_by: Поле для сортировки
-        limit: Лимит результатов
-    
-    Returns:
-        dict: Сводная статистика и список офисов с прогнозами
     """
     require_admin_or_manager(current_user)
     
@@ -278,7 +248,7 @@ def get_prediction_summary(
             predictions = [p for p in predictions if p['category'] == category]
         
         # Сортировка
-        reverse = sort_by != "price"  # price сортируем по возрастанию
+        reverse = sort_by != "price"
         predictions.sort(key=lambda x: x.get(sort_by, 0), reverse=reverse)
         
         # Ограничиваем количество
@@ -327,12 +297,6 @@ def explain_prediction(
     Подробное объяснение прогноза для офиса
     
     Доступ: Админ/Менеджер
-    
-    Args:
-        office_id: ID офиса
-    
-    Returns:
-        dict: Детальное объяснение с факторами влияния и рекомендациями
     """
     require_admin_or_manager(current_user)
     
@@ -394,20 +358,16 @@ def sync_and_retrain(current_user: dict = Depends(get_current_user)):
     Синхронизация данных и переобучение модели
     
     Доступ: Только АДМИН
-    
-    Returns:
-        dict: Результаты синхронизации и обучения
     """
     require_admin(current_user)
     
     conn = get_db()
     
     try:
-        # Обучаем модель заново
         result = rental_predictor.train(conn, force_retrain=True)
         
         return {
-            "success": True,
+            "success": result.get('status') == 'success',
             "message": "Модель успешно переобучена на актуальных данных",
             "details": result
         }
@@ -425,12 +385,6 @@ def get_rental_trends(
     Тренды аренды офисов
     
     Доступ: Админ/Менеджер
-    
-    Args:
-        days: Период анализа в днях
-    
-    Returns:
-        dict: Аналитика трендов
     """
     require_admin_or_manager(current_user)
     
@@ -438,7 +392,6 @@ def get_rental_trends(
     cursor = conn.cursor()
     
     try:
-        # Просмотры по дням
         cursor.execute("""
             SELECT 
                 DATE(viewed_at) as date,
@@ -452,7 +405,6 @@ def get_rental_trends(
         
         views_trend = cursor.fetchall()
         
-        # Заявки по дням
         cursor.execute("""
             SELECT 
                 DATE(created_at) as date,
@@ -466,7 +418,6 @@ def get_rental_trends(
         
         applications_trend = cursor.fetchall()
         
-        # Договоры по дням
         cursor.execute("""
             SELECT 
                 DATE(signed_at) as date,
@@ -501,6 +452,168 @@ def get_rental_trends(
         conn.close()
 
 
+@router.get("/models/compare", response_model=Dict[str, Any])
+def compare_models(current_user: dict = Depends(get_current_user)):
+    """Сравнение всех моделей в ансамбле"""
+    require_admin_or_manager(current_user)
+    
+    # Получаем информацию из production_predictor
+    info = production_predictor.get_model_info()
+    
+    return {
+        "ensemble_available": info.get('is_trained', False),
+        "feature_count": info.get('feature_count', 0),
+        "model_version": info.get('metadata', {}).get('version', 'unknown'),
+        "metrics": info.get('metadata', {}).get('metrics', {})
+    }
+
+
+@router.get("/features/importance", response_model=Dict[str, Any])
+def get_feature_importance(current_user: dict = Depends(get_current_user)):
+    """Важность признаков для разных моделей"""
+    require_admin_or_manager(current_user)
+    
+    info = production_predictor.get_model_info()
+    metadata = info.get('metadata', {})
+    feature_importance = metadata.get('feature_importance', [])
+    
+    return {
+        "feature_importance": feature_importance,
+        "feature_count": info.get('feature_count', 0),
+        "feature_names": info.get('feature_names', [])
+    }
+
+
+@router.get("/health", response_model=Dict[str, Any])
+def ml_health(current_user: dict = Depends(get_current_user)):
+    """Health check ML модуля"""
+    require_admin_or_manager(current_user)
+    
+    info = production_predictor.get_model_info()
+    
+    # Проверяем возраст модели
+    age_warning = None
+    if info['is_trained'] and 'trained_at' in info.get('metadata', {}):
+        trained_at = datetime.fromisoformat(info['metadata']['trained_at'])
+        days_old = (datetime.now() - trained_at).days
+        
+        if days_old > 30:
+            age_warning = f"Model is {days_old} days old, consider retraining"
+    
+    return {
+        "status": "healthy" if info['is_trained'] else "degraded",
+        "model_loaded": info['is_trained'],
+        "age_warning": age_warning,
+        "model_info": info,
+        "cache_size": info.get('cache_size', 0)
+    }
+
+@router.get("/dashboard", response_model=Dict[str, Any])
+def get_model_dashboard(current_user: dict = Depends(get_current_user)):
+    """
+    Дашборд метрик качества модели
+    
+    Доступ: Админ/Менеджер
+    """
+    require_admin_or_manager(current_user)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        # 1. Информация о модели
+        model_info = production_predictor.get_model_info()
+        metadata = model_info.get('metadata', {})
+        metrics = metadata.get('metrics', {})
+        
+        # 2. Реальная статистика из БД
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_offices,
+                SUM(CASE WHEN c.id IS NOT NULL AND c.signed_at > NOW() - INTERVAL '3 months' THEN 1 ELSE 0 END) as rented_recently,
+                SUM(CASE WHEN c.id IS NULL OR c.signed_at <= NOW() - INTERVAL '3 months' THEN 1 ELSE 0 END) as not_rented
+            FROM offices o
+            LEFT JOIN contracts c ON o.id = c.office_id
+        """)
+        office_stats = cursor.fetchone()
+        
+        # 3. Распределение прогнозов по категориям
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_free_offices,
+                AVG(price_per_month) as avg_price
+            FROM offices 
+            WHERE is_free = TRUE
+        """)
+        free_stats = cursor.fetchone()
+        
+        # 4. История обучений (из логов)
+        import glob
+        import json
+        from pathlib import Path
+        
+        training_history = []
+        report_files = sorted(Path('/app/logs/ml').glob('training_report_*.json'), reverse=True)[:5]
+        
+        for report_file in report_files:
+            try:
+                with open(report_file, 'r') as f:
+                    report = json.load(f)
+                    training_history.append({
+                        "timestamp": report.get('timestamp'),
+                        "mean_auc": report.get('training_metadata', {}).get('cv_results', {}).get('mean_auc'),
+                        "samples_count": report.get('training_metadata', {}).get('samples_count')
+                    })
+            except Exception:
+                pass
+        
+        return {
+            "model_info": {
+                "is_trained": model_info['is_trained'],
+                "version": metadata.get('version', 'unknown'),
+                "last_trained_at": metadata.get('trained_at', 'never'),
+                "days_since_training": _days_since(metadata.get('trained_at')),
+                "samples_count": metadata.get('samples_count', 0),
+                "real_samples": metadata.get('real_samples', 0),
+                "synthetic_samples": metadata.get('synthetic_samples', 0),
+                "feature_count": metadata.get('feature_count', 0)
+            },
+            "metrics": {
+                "roc_auc": metrics.get('roc_auc', 0),
+                "accuracy": metrics.get('accuracy', 0),
+                "f1_score": metrics.get('f1_score', 0),
+                "precision": metrics.get('precision', 0),
+                "recall": metrics.get('recall', 0),
+                "cv_auc_mean": metrics.get('cv_auc_mean', 0),
+                "cv_auc_std": metrics.get('cv_auc_std', 0)
+            },
+            "data_distribution": {
+                "total_offices": office_stats['total_offices'],
+                "rented_recently": office_stats['rented_recently'] or 0,
+                "not_rented": office_stats['not_rented'] or 0,
+                "positive_ratio": round((office_stats['rented_recently'] or 0) / office_stats['total_offices'], 3) if office_stats['total_offices'] > 0 else 0,
+                "free_offices": free_stats['total_free_offices'],
+                "avg_price_free": float(free_stats['avg_price'] or 0)
+            },
+            "training_history": training_history,
+            "feature_importance": metadata.get('feature_importance', [])[:10]
+        }
+        
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def _days_since(date_str: str) -> Optional[int]:
+    """Количество дней с указанной даты"""
+    if not date_str:
+        return None
+    try:
+        from datetime import datetime
+        date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+        return (datetime.now() - date).days
+    except Exception:
+        return None
 # ===================================================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ РЕКОМЕНДАЦИЙ
 # ===================================================================
@@ -508,25 +621,24 @@ def get_rental_trends(
 def _generate_recommendations(prediction: Dict[str, Any]) -> List[str]:
     """Генерация рекомендаций на основе прогноза"""
     category = prediction.get('category', 'medium')
-    probability = prediction.get('probability', 0.5)
     
     if category == 'low':
         return [
-            "Низкая активность по офису",
-            "Рекомендации: снизьте цену на 10-15%, добавьте больше фото, активируйте рекламу",
-            "Рассмотрите специальные предложения: первый месяц в подарок или скидка 20% на 3 месяца"
+            "⚠️ Низкая активность по офису",
+            "📉 Рекомендации: снизьте цену на 10-15%, добавьте больше фото, активируйте рекламу",
+            "🎁 Рассмотрите специальные предложения: первый месяц в подарок или скидка 20% на 3 месяца"
         ]
     elif category == 'high':
         return [
-            "Высокий спрос на офис!",
-            "Действуйте быстро: подготовьте договор, свяжитесь с заинтересованными клиентами",
-            "Возможно повышение цены на 5-10% при продлении договора"
+            "🔥 Высокий спрос на офис!",
+            "⚡ Действуйте быстро: подготовьте договор, свяжитесь с заинтересованными клиентами",
+            "💰 Возможно повышение цены на 5-10% при продлении договора"
         ]
-    else:  # medium
+    else:
         return [
-            "Средняя вероятность аренды",
-            "Рекомендации: улучшите описание, добавьте виртуальный тур",
-            "Предложите персональную презентацию офиса заинтересованным клиентам"
+            "📊 Средняя вероятность аренды",
+            "📝 Рекомендации: улучшите описание, добавьте виртуальный тур",
+            "🤝 Предложите персональную презентацию офиса заинтересованным клиентам"
         ]
 
 
@@ -559,7 +671,7 @@ def _generate_detailed_recommendations(
         ]
         recommendations["expected_impact"] = "Заключение договора в ближайшее время"
     
-    else:  # medium
+    else:
         recommendations["actions"] = [
             {"action": "Улучшение описания", "details": "Добавить больше деталей и преимуществ", "impact": "medium"},
             {"action": "Фото/видео материалы", "details": "Профессиональная съёмка офиса", "impact": "medium"},
@@ -568,39 +680,3 @@ def _generate_detailed_recommendations(
         recommendations["expected_impact"] = "Повышение вероятности аренды на 10-15%"
     
     return recommendations
-# Добавь в существующий файл эти эндпоинты:
-
-@router.get("/models/compare", response_model=Dict[str, Any])
-def compare_models(current_user: dict = Depends(get_current_user)):
-    """Сравнение всех моделей в ансамбле"""
-    require_admin_or_manager(current_user)
-    
-    if not advanced_predictor.is_trained:
-        raise HTTPException(status_code=400, detail="Model not trained yet")
-    
-    return {
-        "models": list(advanced_predictor.models.keys()),
-        "ensemble_size": len(advanced_predictor.models),
-        "feature_count": len(advanced_predictor.feature_columns) if advanced_predictor.feature_columns else 0
-    }
-
-@router.get("/features/importance", response_model=Dict[str, Any])
-def get_feature_importance(current_user: dict = Depends(get_current_user)):
-    """Важность признаков для разных моделей"""
-    require_admin_or_manager(current_user)
-    
-    if not advanced_predictor.is_trained:
-        raise HTTPException(status_code=400, detail="Model not trained yet")
-    
-    importance = {}
-    for name, model in advanced_predictor.models.items():
-        if name != 'neural_network' and hasattr(model, 'feature_importances_'):
-            imp = model.feature_importances_
-            importance[name] = {
-                "top_features": [
-                    {"feature": advanced_predictor.feature_columns[i], "importance": float(imp[i])}
-                    for i in np.argsort(imp)[-5:][::-1]
-                ]
-            }
-    
-    return importance

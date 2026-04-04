@@ -38,47 +38,71 @@ Business Center - это комплексная система для управ
 
 ### 1. Клонирование репозитория
 
-```
+```bash
 git clone https://github.com/H1sMajesty777/BusinessCenter
 cd BusinessCenter
 ```
 
-### 2. Запуск Docker контейнеров
+**2. Подготовка директорий**
 
+```bash
+mkdir -p data/models data/cache logs/ml
 ```
-# Сборка и запуск всех сервисов
-docker-compose up -d --build
 
-# Проверка статуса контейнеров
-docker ps
+**3. Сборка и запуск**
+
+```bash
+# Полная пересборка с зависимостями (рекомендуется при первом запуске)
+docker-compose build --no-cache
+
+# Запуск контейнеров
+docker-compose up -d
 ```
 
 **Ожидаемый вывод:**
-```
+
+```text
 business_center_db      - PostgreSQL 16 (порт 5432)
 business_center_redis   - Redis 7 (порт 6379)  
 business_center_api     - FastAPI (порт 8000)
 business_center_pgadmin - pgAdmin 4 (порт 8080)
 ```
 
-### 3. Инициализация базы данных
+**4. Инициализация базы данных**
 
 ```bash
-# Копирование SQL скрипта в контейнер
+# Копирование SQL скрипта
 docker cp full_bd.sql business_center_db:/tmp/init.sql
 
 # Выполнение инициализации
 docker exec -it business_center_db psql -U postgres -d project -f /tmp/init.sql
 ```
 
-### 4. Генерация тестовых данных
+**5. Генерация тестовых данных**
 
 ```bash
 # Копирование генератора данных
 docker cp generate_advanced_data.py business_center_api:/app/generate_advanced_data.py
 
-# Запуск генерации (создаст ~5000 просмотров, ~150 заявок, ~40 договоров)
+# Запуск генерации
 docker exec -it business_center_api python /app/generate_advanced_data.py
+```
+
+**6. Копирование ML модуля**
+
+```bash
+# Копирование моделей машинного обучения
+docker cp backend/api/ml_models business_center_api:/app/api/
+
+# Копирование скрипта инициализации
+docker cp scripts/init_ml.py business_center_api:/app/scripts/
+```
+
+**7. Обучение AI модели**
+
+```bash
+# Запуск обучения (зависимости уже есть в образе!)
+docker exec -it business_center_api python /app/scripts/init_ml.py --force
 ```
 
 ### 5. Получение токена доступа
