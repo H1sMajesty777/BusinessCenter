@@ -1,75 +1,80 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+# backend/api/routers/auth.py
+from fastapi import APIRouter, HTTPException, Depends, Body, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
+from datetime import datetime
 from api.database import get_db, get_redis
 from api.security import (
-    verify_password,
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    blacklist_token,
-    store_refresh_token,
-    delete_refresh_token,
-    is_token_blacklisted,
+    verify_password, create_access_token, create_refresh_token,
+    decode_token, blacklist_token, store_refresh_token,
+    delete_refresh_token, get_refresh_token, is_token_blacklisted,
+    set_token_cookie, clear_token_cookie, get_token_from_cookie,
     settings
 )
 from api.models.user import LoginRequest, Token, UserResponse, TokenRefresh
-
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 security = HTTPBearer(auto_error=False)
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_current_user(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
     """
-    Получить текущего пользователя из JWT access токена
-    
-    Args:
-        credentials: JWT токен из заголовка Authorization
-    
-    Returns:
-        dict: Payload токена (sub, role_id, login, etc.)
-    
-    Raises:
-        HTTPException: 401 если токена нет, он неверный или в blacklist
+    Получить текущего пользователя из Cookie или Bearer токена
     """
-    if not credentials:
+    token = None
+    
+    # Сначала пробуем взять из Cookie
+    token = get_token_from_cookie(request, "access")
+    
+    # Если нет - пробуем из Bearer header
+    if not token and credentials:
+        token = credentials.credentials
+    
+    if not token:
         raise HTTPException(status_code=401, detail="Нет токена")
-    
-    token = credentials.credentials
     
     # Проверка blacklist
     if is_token_blacklisted(token):
         raise HTTPException(status_code=401, detail="Токен отозван")
     
-    # Декодирование токена
     payload = decode_token(token, expected_type="access")
-    
     if not payload:
         raise HTTPException(status_code=401, detail="Неверный токен")
     
     return payload
 
 
-# ENDPOINTS
+def require_admin(current_user: dict):
+    """Проверка роли: только админ"""
+    if current_user.get("role_id") != 1:
+        raise HTTPException(status_code=403, detail="Только администраторы")
 
-@router.post("/login", response_model=Token)
-def login(login_request: LoginRequest = Body(...)):
+
+def require_admin_or_manager(current_user: dict):
+    """Проверка роли: админ или менеджер"""
+    if current_user.get("role_id") not in [1, 2]:
+        raise HTTPException(status_code=403, detail="Только админ и менеджер")
+
+
+# ===================================================================
+# ENDPOINTS
+# ===================================================================
+
+@router.post("/login")
+def login(
+    login_request: LoginRequest = Body(...),
+    response: Response = None
+):
     """
-    Вход в систему с выдачей access + refresh токенов
+    Вход в систему с выдачей access + refresh токенов в HttpOnly Cookie
     
     Доступ: Все (публичный endpoint)
     
-    Args:
-        login_request: Данные для входа (login, password)
-    
     Returns:
-        Token: Access и refresh токены
-    
-    Raises:
-        HTTPException: 401 если логин или пароль неверны
-        HTTPException: 403 если аккаунт заблокирован
-    
+        Токены устанавливаются в Cookie, в теле возвращается информация о пользователе
     """
     conn = get_db()
     cursor = conn.cursor()
@@ -107,52 +112,49 @@ def login(login_request: LoginRequest = Body(...)):
         
         # Создаём токены
         access_token = create_access_token(
-            data={"sub": str(user_id), "login": user_login, "role_id": role_id},
-            expire_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+            data={"sub": str(user_id), "login": user_login, "role_id": role_id}
         )
         
         refresh_token = create_refresh_token(
-            data={"sub": str(user_id), "login": user_login, "role_id": role_id},
-            expire_days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+            data={"sub": str(user_id), "login": user_login, "role_id": role_id}
         )
+        
+        # ✅ Устанавливаем Cookie (вместо JSON)
+        set_token_cookie(response, access_token, refresh_token)
         
         # Сохраняем refresh токен в Redis
         store_refresh_token(str(user_id), refresh_token)
         
-        return Token(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_type="bearer",
-            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            refresh_expires_in=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
-        )
+        # ✅ Возвращаем только информацию о пользователе, без токенов в теле!
+        return {
+            "message": "Успешный вход",
+            "user": {
+                "id": user_id,
+                "login": user_login,
+                "role_id": role_id
+            }
+        }
     
     finally:
         cursor.close()
         conn.close()
 
 
-@router.post("/refresh", response_model=Token)
-def refresh_token(token_data: TokenRefresh = Body(...)):
+@router.post("/refresh")
+def refresh_token(
+    request: Request,
+    response: Response
+):
     """
-    Обновление access токена через refresh токен
-    
-    Доступ: Все у кого есть валидный refresh токен
-    
-    Args:
-        token_data: Refresh токен
-    
-    Returns:
-        Token: Новые access и refresh токены
-    
-    Raises:
-        HTTPException: 401 если refresh токен неверный или отозван
-        HTTPException: 403 если пользователь заблокирован
-    
+    Обновление access токена через refresh токен из Cookie
     """
-    # Декодируем refresh токен
-    payload = decode_token(token_data.refresh_token, expected_type="refresh")
+    # ✅ Берём refresh токен из Cookie
+    refresh_token = get_token_from_cookie(request, "refresh")
     
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Нет refresh токена")
+    
+    payload = decode_token(refresh_token, expected_type="refresh")
     if not payload:
         raise HTTPException(status_code=401, detail="Неверный refresh токен")
     
@@ -162,7 +164,7 @@ def refresh_token(token_data: TokenRefresh = Body(...)):
     
     # Проверяем что refresh токен хранится в Redis
     stored_token = get_refresh_token(user_id)
-    if not stored_token or stored_token != token_data.refresh_token:
+    if not stored_token or stored_token != refresh_token:
         raise HTTPException(status_code=401, detail="Refresh токен отозван или не найден")
     
     # Проверяем что пользователь всё ещё активен
@@ -181,27 +183,15 @@ def refresh_token(token_data: TokenRefresh = Body(...)):
             delete_refresh_token(user_id)
             raise HTTPException(status_code=403, detail="Аккаунт заблокирован")
         
-        # Создаём новые токены
+        # Создаём новый access токен
         new_access_token = create_access_token(
-            data={"sub": str(user_id), "login": user_login, "role_id": role_id},
-            expire_minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+            data={"sub": str(user_id), "login": user_login, "role_id": role_id}
         )
         
-        new_refresh_token = create_refresh_token(
-            data={"sub": str(user_id), "login": user_login, "role_id": role_id},
-            expire_days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-        )
+        # ✅ Обновляем Cookie
+        set_token_cookie(response, new_access_token)
         
-        # Сохраняем новый refresh токен в Redis
-        store_refresh_token(user_id, new_refresh_token)
-        
-        return Token(
-            access_token=new_access_token,
-            refresh_token=new_refresh_token,
-            token_type="bearer",
-            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            refresh_expires_in=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
-        )
+        return {"message": "Токен обновлён"}
     
     finally:
         cursor.close()
@@ -209,20 +199,11 @@ def refresh_token(token_data: TokenRefresh = Body(...)):
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: dict = Depends(get_current_user)):
+async def get_me(current_user: dict = Depends(get_current_user)):
     """
     Просмотр своего профиля
     
     Доступ: Все авторизованные с валидным access токеном
-    
-    Args:
-        current_user: Текущий пользователь из токена
-    
-    Returns:
-        UserResponse: Данные профиля текущего пользователя
-    
-    Raises:
-        HTTPException: 404 если пользователь не найден
     """
     conn = get_db()
     cursor = conn.cursor()
@@ -254,69 +235,113 @@ def get_me(current_user: dict = Depends(get_current_user)):
         conn.close()
 
 
-@router.post("/logout", response_model=dict)
-def logout(current_user: dict = Depends(get_current_user)):
+@router.post("/logout")
+async def logout(
+    request: Request,
+    response: Response,
+    current_user: dict = Depends(get_current_user)
+):
     """
     Выход из системы с отзывом всех токенов
     
-    Доступ: Все авторизованные
-    
-    Args:
-        current_user: Текущий пользователь из токена
-    
-    Returns:
-        dict: Сообщение об успешном выходе
-    
-    Note:
-        Access токен добавляется в blacklist
-        Refresh токен удаляется из Redis
-        Клиент должен удалить токены локально
+    Access токен добавляется в blacklist
+    Refresh токен удаляется из Redis
+    Cookie очищаются
     """
-    credentials = None
-    try:
-        # Получаем токен из заголовка
-        from fastapi import Request
-        # Токен уже проверен в get_current_user
-    except:
-        pass
-    
     user_id = current_user.get("sub")
     
-    # Добавляем access токен в blacklist (будет проверяться при каждом запросе)
-    # Токен передаётся через Depends(get_current_user)
+    # Получаем токен для добавления в blacklist
+    token = get_token_from_cookie(request, "access")
+    if token:
+        blacklist_token(token)
     
     # Удаляем refresh токен из Redis
     delete_refresh_token(user_id)
     
+    # ✅ Очищаем Cookie
+    clear_token_cookie(response)
+    
     return {
         "message": "Выход успешен",
-        "detail": "Все токены отозваны. Удалите токены на клиенте."
+        "detail": "Все токены отозваны. Cookie очищены."
     }
 
 
-@router.post("/logout/all", response_model=dict)
-def logout_all(current_user: dict = Depends(get_current_user)):
+@router.post("/logout/all")
+async def logout_all(
+    response: Response,
+    current_user: dict = Depends(get_current_user)
+):
     """
     Выход со всех устройств (отзыв всех токенов пользователя)
-    
-    Доступ: Все авторизованные
-    
-    Args:
-        current_user: Текущий пользователь из токена
-    
-    Returns:
-        dict: Сообщение об успешном выходе со всех устройств
-    
-    Note:
-        Удаляет refresh токен из Redis
-        При следующем запросе с любым токеном будет отказ
     """
     user_id = current_user.get("sub")
     
     # Удаляем refresh токен
     delete_refresh_token(user_id)
     
+    # Очищаем Cookie
+    clear_token_cookie(response)
+    
     return {
         "message": "Выход со всех устройств успешен",
         "detail": "Все токены отозваны. Необходимо войти заново."
     }
+
+
+# Для обратной совместимости - получение токена в теле (только для мобильных приложений)
+@router.post("/mobile/login", response_model=Token)
+def mobile_login(login_request: LoginRequest = Body(...)):
+    """
+    Вход для мобильных приложений - токены в JSON теле (не в Cookie)
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute(
+            """SELECT id, login, password_hash, role_id, is_active 
+               FROM users WHERE login = %s""",
+            (login_request.login,)
+        )
+        user = cursor.fetchone()
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+        
+        user_id = user['id']
+        user_login = user['login']
+        password_hash = user['password_hash']
+        role_id = user['role_id']
+        is_active = user['is_active']
+        
+        if isinstance(password_hash, bytes):
+            password_hash = password_hash.decode('utf-8')
+        
+        if not verify_password(login_request.password, password_hash):
+            raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+        
+        if not is_active:
+            raise HTTPException(status_code=403, detail="Аккаунт заблокирован")
+        
+        access_token = create_access_token(
+            data={"sub": str(user_id), "login": user_login, "role_id": role_id}
+        )
+        
+        refresh_token = create_refresh_token(
+            data={"sub": str(user_id), "login": user_login, "role_id": role_id}
+        )
+        
+        store_refresh_token(str(user_id), refresh_token)
+        
+        return Token(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            refresh_expires_in=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+        )
+    
+    finally:
+        cursor.close()
+        conn.close()
