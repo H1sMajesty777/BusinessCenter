@@ -105,13 +105,13 @@ docker cp scripts/init_ml.py business_center_api:/app/scripts/
 docker exec -it business_center_api python /app/scripts/init_ml.py --force
 ```
 
-**8. Работа с бЭкапами**
+**8. Работа с бэкапами**
 
 ```bash
 # Команда создания бэкапа
 $date = Get-Date -Format "yyyyMMdd_HHmmss"; docker exec business_center_db pg_dump -U postgres project --encoding=UTF8 --inserts -f /tmp/dump.sql; docker cp business_center_db:/tmp/dump.sql "backups\backup_$date.sql"; docker exec business_center_db rm /tmp/dump.sql
 
-# Команда восстановления бэкапа
+# Команда восстановления бэкапа (Замените название бэкапа *backup_20260405_173822.sql* на свое)
 Get-Content backups\backup_20260405_173822.sql | docker exec -i business_center_db psql -U postgres -d project
 
 ```
