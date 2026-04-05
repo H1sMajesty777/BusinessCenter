@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/ai/rental-prediction/offices?office_ids=1,2,3,4,5"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  office_ids: 1,2,3,4,5
+order: 3000

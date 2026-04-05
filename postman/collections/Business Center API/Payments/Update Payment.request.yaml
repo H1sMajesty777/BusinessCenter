@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/api/payments/{{payment_id}}"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "status_id": 9,
+        "amount": 29500
+    }
+order: 6000

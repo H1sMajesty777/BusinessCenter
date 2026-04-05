@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/ai/rental-prediction/trends?days=90"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  days: "90"
+order: 7000

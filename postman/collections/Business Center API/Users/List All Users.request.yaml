@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/users?limit=50"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  limit: "50"
+order: 1000

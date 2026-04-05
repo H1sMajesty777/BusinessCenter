@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{base_url}}/api/users/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "login": "new_client",
+        "password": "client123",
+        "email": "new@example.com",
+        "phone": "+7 (999) 123-45-67",
+        "full_name": "New Client",
+        "role_id": 3,
+        "is_active": true
+    }
+order: 2000

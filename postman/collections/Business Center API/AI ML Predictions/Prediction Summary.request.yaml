@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/ai/rental-prediction/summary?limit=20"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  limit: "20"
+order: 4000

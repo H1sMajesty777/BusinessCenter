@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/api/office-views"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "office_id": 5,
+        "duration_seconds": 120,
+        "is_contacted": false
+    }
+order: 1000

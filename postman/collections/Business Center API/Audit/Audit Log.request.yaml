@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/audit?limit=100"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  limit: "100"
+order: 1000

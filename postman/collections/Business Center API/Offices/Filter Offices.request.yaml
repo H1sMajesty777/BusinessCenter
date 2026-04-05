@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/offices?floor=2&max_price=40000&is_free=true"
+method: GET
+queryParams:
+  floor: "2"
+  max_price: "40000"
+  is_free: "true"
+order: 3000

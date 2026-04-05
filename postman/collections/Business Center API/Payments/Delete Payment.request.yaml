@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/api/payments/5"
+method: DELETE
+headers:
+  Authorization: Bearer {{access_token}}
+order: 7000

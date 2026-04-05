@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{base_url}}/api/ai/rental-prediction/summary?min_probability=0.5&sort_by\
+  =probability&category=high"
+method: GET
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  min_probability: "0.5"
+  sort_by: probability
+  category: high
+order: 5000

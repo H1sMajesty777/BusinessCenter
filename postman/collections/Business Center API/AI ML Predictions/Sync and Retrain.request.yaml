@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/api/ai/rental-prediction/sync"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+order: 13000

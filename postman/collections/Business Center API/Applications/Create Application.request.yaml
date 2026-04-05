@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{base_url}}/api/applications"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "office_id": 5,
+        "comment": "I want to view the office tomorrow at 2 PM"
+    }
+order: 1000

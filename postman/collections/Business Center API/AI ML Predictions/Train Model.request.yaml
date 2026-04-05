@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/api/ai/rental-prediction/train?force=true"
+method: POST
+headers:
+  Authorization: Bearer {{access_token}}
+queryParams:
+  force: "true"
+order: 1000

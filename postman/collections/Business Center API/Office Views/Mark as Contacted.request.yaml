@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{base_url}}/api/office-views/1/contact"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "is_contacted": true
+    }
+order: 6000

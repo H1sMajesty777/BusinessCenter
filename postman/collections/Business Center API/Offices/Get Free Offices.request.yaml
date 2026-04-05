@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{base_url}}/api/offices?is_free=true"
+method: GET
+queryParams:
+  is_free: "true"
+order: 2000

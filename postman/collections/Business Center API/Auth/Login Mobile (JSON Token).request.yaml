@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{base_url}}/api/auth/mobile/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "login": "admin",
+        "password": "admin123"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const jsonData = pm.response.json();
+      if (jsonData.access_token) {
+          pm.collectionVariables.set('access_token', jsonData.access_token);
+          pm.collectionVariables.set('refresh_token', jsonData.refresh_token);
+      }
+    language: text/javascript
+order: 2000

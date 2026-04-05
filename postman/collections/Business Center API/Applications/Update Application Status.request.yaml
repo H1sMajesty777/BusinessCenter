@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{base_url}}/api/applications/{{application_id}}/status"
+method: PUT
+headers:
+  Authorization: Bearer {{access_token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "status_id": 2
+    }
+order: 4000
