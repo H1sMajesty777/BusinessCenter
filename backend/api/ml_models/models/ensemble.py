@@ -124,7 +124,7 @@ class EnsembleModel:
         
         self.is_fitted = True
         
-        logger.info(f"✅ Ensemble trained. AUC: {metrics['roc_auc']:.3f}, CV AUC: {metrics['cv_auc_mean']:.3f}")
+        logger.info(f"Ensemble trained. AUC: {metrics['roc_auc']:.3f}, CV AUC: {metrics['cv_auc_mean']:.3f}")
         
         return {
             'metrics': metrics,

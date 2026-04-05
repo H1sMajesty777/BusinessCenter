@@ -106,7 +106,7 @@ def get_offices(
             query += " AND price_per_month <= %s"
             params.append(max_price)
         
-        # ✅ Правильная обработка boolean
+        # Правильная обработка boolean
         if is_free is not None:
             query += " AND is_free = %s"
             params.append(bool(is_free))
@@ -118,7 +118,7 @@ def get_offices(
         
         result = []
         for r in rows:
-            # ✅ Безопасный парсинг JSON
+            # Безопасный парсинг JSON
             try:
                 amenities_data = json.loads(r['amenities']) if r['amenities'] else None
             except (json.JSONDecodeError, TypeError, Exception):
@@ -141,7 +141,7 @@ def get_offices(
         return result
     
     except Exception as e:
-        # ✅ Показываем ошибку для дебага
+        # Показываем ошибку для дебага
         raise HTTPException(status_code=500, detail=f"Ошибка: {str(e)}")
     finally:
         cursor.close()
@@ -192,7 +192,7 @@ def create_office(request: Request, office: OfficeCreate, current_user: dict = D
         row = cursor.fetchone()
         conn.commit()
         
-        # ✅ Безопасный парсинг JSON
+        # Безопасный парсинг JSON
         try:
             amenities_data = json.loads(row['amenities']) if row['amenities'] else None
         except (json.JSONDecodeError, TypeError, Exception):
@@ -248,7 +248,7 @@ def get_office(request: Request, office_id: int):
         if not row:
             raise HTTPException(status_code=404, detail="Офис не найден")
         
-        # ✅ Безопасный парсинг JSON
+        # Безопасный парсинг JSON
         try:
             amenities_data = json.loads(row['amenities']) if row['amenities'] else None
         except (json.JSONDecodeError, TypeError, Exception):
@@ -351,7 +351,7 @@ def update_office(request: Request, office_id: int, office: OfficeUpdate, curren
         
         conn.commit()
         
-        # ✅ Безопасный парсинг JSON
+        # Безопасный парсинг JSON
         try:
             amenities_data = json.loads(row['amenities']) if row['amenities'] else None
         except (json.JSONDecodeError, TypeError, Exception):

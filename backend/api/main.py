@@ -13,13 +13,13 @@ app = FastAPI(
 )
 
 # ==============================================
-# 🚦 RATE LIMITING
+# RATE LIMITING
 # ==============================================
+
 setup_rate_limiting(app)
 
-
 # ==============================================
-# 🛡️ MIDDLEWARE
+# MIDDLEWARE
 # ==============================================
 
 # Доверять прокси (Nginx)
@@ -29,7 +29,7 @@ if settings.BEHIND_PROXY:
         ProxyHeadersMiddleware, 
         trusted_hosts=["*"]
     )
-    print("🔄 Proxy headers middleware enabled")
+    print("Proxy headers middleware enabled")
 
 # Trusted hosts (защита от Host header attacks)
 if settings.is_production:
@@ -37,7 +37,7 @@ if settings.is_production:
         TrustedHostMiddleware,
         allowed_hosts=["localhost", "127.0.0.1"]
     )
-    print("🛡️ Trusted host middleware enabled")
+    print("Trusted host middleware enabled")
 
 # CORS middleware
 app.add_middleware(
@@ -77,7 +77,7 @@ app.include_router(ai_rental_prediction.router)
 
 
 # ==============================================
-# 📊 HEALTH CHECK
+# HEALTH CHECK
 # ==============================================
 
 @app.get("/")

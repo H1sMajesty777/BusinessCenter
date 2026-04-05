@@ -149,7 +149,7 @@ for app in approved:
     contract_count += 1
 
 conn.commit()
-print(f'✅ Создано {contract_count} договоров')
+print(f'Создано {contract_count} договоров')
 
 # 7. Генерируем платежи
 print('Генерация платежей...')
@@ -195,11 +195,11 @@ stats = cur.fetchone()
 print('\n' + '='*60)
 print('ФИНАЛЬНАЯ СТАТИСТИКА')
 print('='*60)
-print(f'   Просмотров: {stats[0]}')
-print(f'   Заявок: {stats[1]}')
-print(f'   Договоров: {stats[2]}')
-print(f'   Платежей: {stats[3]}')
-print(f'   Клиентов: {len(users)}')
+print(f'Просмотров: {stats[0]}')
+print(f'Заявок: {stats[1]}')
+print(f'Договоров: {stats[2]}')
+print(f'Платежей: {stats[3]}')
+print(f'Клиентов: {len(users)}')
 
 cur.close()
 conn.close()

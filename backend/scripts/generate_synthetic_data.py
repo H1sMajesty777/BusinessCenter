@@ -43,7 +43,7 @@ def get_users(conn):
 def main():
     """Основная функция"""
     print("\n" + "="*60)
-    print("🚀 ГЕНЕРАЦИЯ СИНТЕТИЧЕСКИХ ДАННЫХ ДЛЯ ML МОДЕЛИ")
+    print("ГЕНЕРАЦИЯ СИНТЕТИЧЕСКИХ ДАННЫХ ДЛЯ ML МОДЕЛИ")
     print("="*60 + "\n")
     
     try:
@@ -51,22 +51,22 @@ def main():
         print("Подключение к PostgreSQL...")
         conn = psycopg.connect(**DB_CONFIG)
         conn.row_factory = dict_row
-        print("✅ Подключение к БД установлено\n")
+        print("Подключение к БД установлено\n")
         
         # Получаем данные
         offices = get_offices(conn)
         users = get_users(conn)
         
-        print(f"📋 Найдено офисов: {len(offices)}")
-        print(f"👥 Найдено пользователей-клиентов: {len(users)}")
+        print(f"Найдено офисов: {len(offices)}")
+        print(f"Найдено пользователей-клиентов: {len(users)}")
         print()
         
         if len(offices) == 0:
-            print("❌ Нет офисов в базе! Сначала выполни full_bd.sql")
+            print("Нет офисов в базе! Сначала выполни full_bd.sql")
             return
         
         # Генерируем просмотры
-        print("📊 Генерация просмотров офисов...")
+        print("Генерация просмотров офисов...")
         cursor = conn.cursor()
         view_count = 0
         
@@ -93,10 +93,10 @@ def main():
                 print(f"   Обработано {office['id']} офисов...")
         
         conn.commit()
-        print(f"✅ Создано {view_count} просмотров")
+        print(f"Создано {view_count} просмотров")
         
         # Генерируем заявки
-        print("📝 Генерация заявок...")
+        print("Генерация заявок...")
         app_count = 0
         
         for office in offices:
@@ -135,10 +135,10 @@ def main():
                     pass
         
         conn.commit()
-        print(f"✅ Создано {app_count} заявок")
+        print(f"Создано {app_count} заявок")
         
         print("\n" + "="*60)
-        print("✅ ГЕНЕРАЦИЯ ДАННЫХ ЗАВЕРШЕНА!")
+        print("ГЕНЕРАЦИЯ ДАННЫХ ЗАВЕРШЕНА!")
         print("="*60)
         
         # Показываем статистику
@@ -150,7 +150,7 @@ def main():
         """)
         stats = cursor.fetchone()
         
-        print(f"\n📊 Итоговая статистика:")
+        print(f"\nИтоговая статистика:")
         print(f"   Всего просмотров: {stats['views']}")
         print(f"   Всего заявок: {stats['apps']}")
         print(f"   Всего клиентов: {stats['clients']}")
@@ -162,7 +162,7 @@ def main():
         print("   POST /api/ai/rental-prediction/train")
         
     except Exception as e:
-        print(f"❌ Ошибка: {e}")
+        print(f"Ошибка: {e}")
         import traceback
         traceback.print_exc()
 

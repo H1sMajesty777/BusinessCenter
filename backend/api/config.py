@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     """Настройки приложения"""
     
     # ===================================================================
-    # 🔐 JWT НАСТРОЙКИ (ОБЯЗАТЕЛЬНО из .env!)
+    # JWT НАСТРОЙКИ (ОБЯЗАТЕЛЬНО из .env!)
     # ===================================================================
     
     JWT_SECRET_KEY: str = Field(
@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     )
     
     # ===================================================================
-    # 🗄️ POSTGRESQL НАСТРОЙКИ
+    # POSTGRESQL НАСТРОЙКИ
     # ===================================================================
     
     DB_HOST: str = Field(default="localhost")
@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     DB_NAME: str = Field(default="project")
     
     # ===================================================================
-    # 🗂️ REDIS НАСТРОЙКИ
+    # REDIS НАСТРОЙКИ
     # ===================================================================
     
     REDIS_HOST: str = Field(default="localhost")
@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: Optional[str] = Field(default=None)
     
     # ===================================================================
-    # 🔒 HTTPS И БЕЗОПАСНОСТЬ
+    # HTTPS И БЕЗОПАСНОСТЬ
     # ===================================================================
     
     SECURE_COOKIES: bool = Field(
@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     )
     
     # ===================================================================
-    # 🍪 COOKIE НАСТРОЙКИ
+    # COOKIE НАСТРОЙКИ
     # ===================================================================
     
     COOKIE_HTTPONLY: bool = Field(
@@ -90,7 +90,7 @@ class Settings(BaseSettings):
     )
     
     # ===================================================================
-    # ⚙️ ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ
+    # ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ
     # ===================================================================
     
     ENVIRONMENT: str = Field(default="development")
@@ -118,7 +118,7 @@ class Settings(BaseSettings):
         if not v or v == "":
             if cls._is_production():
                 raise ValueError(
-                    "❌ JWT_SECRET_KEY не задан! Это КРИТИЧЕСКАЯ ошибка безопасности.\n"
+                    "JWT_SECRET_KEY не задан! Это КРИТИЧЕСКАЯ ошибка безопасности.\n"
                     "Сгенерируйте ключ: python -c \"import secrets; print(secrets.token_urlsafe(32))\"\n"
                     "И добавьте в файл .env: JWT_SECRET_KEY=ваш_сгенерированный_ключ"
                 )
@@ -126,7 +126,7 @@ class Settings(BaseSettings):
                 import warnings
                 temp_key = secrets.token_urlsafe(32)
                 warnings.warn(
-                    f"⚠️ ВНИМАНИЕ: JWT_SECRET_KEY не задан! Используется ВРЕМЕННЫЙ ключ.\n"
+                    f"ВНИМАНИЕ: JWT_SECRET_KEY не задан! Используется ВРЕМЕННЫЙ ключ.\n"
                     f"Для production ОБЯЗАТЕЛЬНО задайте постоянный ключ в .env!\n"
                     f"Временный ключ: {temp_key}",
                     RuntimeWarning
@@ -148,7 +148,7 @@ class Settings(BaseSettings):
         
         if v.lower() in default_secrets:
             raise ValueError(
-                "❌ Используется НЕНАДЁЖНЫЙ секретный ключ! "
+                "Используется НЕНАДЁЖНЫЙ секретный ключ! "
                 "Сгенерируйте уникальный ключ через secrets.token_urlsafe(32)"
             )
         
@@ -219,20 +219,20 @@ class Settings(BaseSettings):
 
 try:
     settings = Settings()
-    print(f"✅ Конфигурация загружена из .env (окружение: {settings.ENVIRONMENT})")
+    print(f"Конфигурация загружена из .env (окружение: {settings.ENVIRONMENT})")
     
     if settings.JWT_SECRET_KEY:
         secret_preview = settings.JWT_SECRET_KEY[:8] + "..." + settings.JWT_SECRET_KEY[-4:]
-        print(f"🔐 JWT секрет загружен: {secret_preview} (длина: {len(settings.JWT_SECRET_KEY)} симв.)")
+        print(f"JWT секрет загружен: {secret_preview} (длина: {len(settings.JWT_SECRET_KEY)} симв.)")
     
-    print(f"🔒 Secure cookies: {settings.cookie_secure}")
-    print(f"🍪 HttpOnly: {settings.COOKIE_HTTPONLY}")
-    print(f"🍪 SameSite: {settings.COOKIE_SAMESITE}")
-    print(f"🔄 Behind proxy: {settings.BEHIND_PROXY}")
+    print(f"Secure cookies: {settings.cookie_secure}")
+    print(f"HttpOnly: {settings.COOKIE_HTTPONLY}")
+    print(f"SameSite: {settings.COOKIE_SAMESITE}")
+    print(f"Behind proxy: {settings.BEHIND_PROXY}")
     
 except ValidationError as e:
     print("\n" + "="*60)
-    print("❌ ОШИБКА КОНФИГУРАЦИИ!")
+    print("ОШИБКА КОНФИГУРАЦИИ!")
     print("="*60)
     print(str(e))
     print("\n📝 Решение:")

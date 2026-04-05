@@ -237,12 +237,12 @@ class DataValidator:
         
         # Логирование результатов
         if is_valid:
-            logger.info(f"✅ Data validation passed: {len(df)} samples, {statistics['feature_count']} features")
+            logger.info(f"Data validation passed: {len(df)} samples, {statistics['feature_count']} features")
         else:
-            logger.error(f"❌ Data validation failed: {errors}")
+            logger.error(f"Data validation failed: {errors}")
         
         if warnings:
-            logger.warning(f"⚠️ Warnings: {len(warnings)}")
+            logger.warning(f"Warnings: {len(warnings)}")
         
         return ValidationReport(
             is_valid=is_valid,

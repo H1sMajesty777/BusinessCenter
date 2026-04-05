@@ -59,13 +59,13 @@ class RentalPredictor:
             # Определяем категорию
             if probability >= 0.7:
                 category = "high"
-                description = "🔥 Высокая вероятность аренды! Офис востребован."
+                description = "Высокая вероятность аренды! Офис востребован."
             elif probability >= 0.4:
                 category = "medium"
-                description = "📊 Средняя вероятность аренды. Есть потенциал."
+                description = "Средняя вероятность аренды. Есть потенциал."
             else:
                 category = "low"
-                description = "⚠️ Низкая вероятность аренды. Требуется анализ."
+                description = "Низкая вероятность аренды. Требуется анализ."
             
             # Добавляем топ факторов (из feature importance если есть)
             model_info = self._predictor.get_model_info()

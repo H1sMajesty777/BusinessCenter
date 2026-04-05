@@ -63,7 +63,7 @@ class ProductionRentalPredictor:
                 self.feature_names = self.metadata.get('feature_names', [])
                 self.is_trained = True
                 
-                logger.info(f"✅ Model loaded. Version: {self.metadata.get('version', 'unknown')}")
+                logger.info(f"   Model loaded. Version: {self.metadata.get('version', 'unknown')}")
                 logger.info(f"   Trained at: {self.metadata.get('trained_at', 'unknown')}")
                 logger.info(f"   Samples: {self.metadata.get('samples_count', 0)}")
                 logger.info(f"   AUC: {self.metadata.get('metrics', {}).get('roc_auc', 0):.3f}")
@@ -85,7 +85,7 @@ class ProductionRentalPredictor:
                 json.dump(self.metadata, f, indent=2, default=str)
             
             # ИСПРАВЛЕНО: используем MODEL_DIR вместо model_dir
-            logger.info(f"✅ Model saved to {config.MODEL_DIR}")
+            logger.info(f"Model saved to {config.MODEL_DIR}")
             
             # Сохраняем бэкап
             backup_path = config.MODEL_DIR / f"backup_{self.metadata['version']}.pkl"
@@ -107,7 +107,7 @@ class ProductionRentalPredictor:
             }
         
         logger.info("=" * 60)
-        logger.info("🚀 STARTING MODEL TRAINING")
+        logger.info("STARTING MODEL TRAINING")
         logger.info("=" * 60)
         
         try:
@@ -196,7 +196,7 @@ class ProductionRentalPredictor:
             self._save_model()
             
             logger.info("=" * 60)
-            logger.info(f"✅ TRAINING COMPLETE!")
+            logger.info(f"TRAINING COMPLETE!")
             logger.info(f"   AUC: {result['metrics']['roc_auc']:.3f}")
             logger.info(f"   Accuracy: {result['metrics']['accuracy']:.3f}")
             logger.info("=" * 60)
@@ -262,15 +262,15 @@ class ProductionRentalPredictor:
             # Определяем категорию
             if probability >= 0.7:
                 category = "high"
-                description = "🔥 Высокая вероятность аренды! Офис востребован."
+                description = "Высокая вероятность аренды! Офис востребован."
                 recommendation = "Срочно свяжитесь с потенциальными арендаторами"
             elif probability >= 0.4:
                 category = "medium"
-                description = "📊 Средняя вероятность аренды. Есть потенциал."
+                description = "Средняя вероятность аренды. Есть потенциал."
                 recommendation = "Улучшите презентацию офиса"
             else:
                 category = "low"
-                description = "⚠️ Низкая вероятность аренды. Требуется анализ."
+                description = "Низкая вероятность аренды. Требуется анализ."
                 recommendation = "Рассмотрите снижение цены или акции"
             
             result = {

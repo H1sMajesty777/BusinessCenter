@@ -18,7 +18,7 @@ from collections import defaultdict
 
 def main():
     print('\n' + '='*60)
-    print('ПРОДВИНУТЫЙ ГЕНЕРАТОР РЕАЛИСТИЧНЫХ ДАННЫХ')
+    print('🚀 ПРОДВИНУТЫЙ ГЕНЕРАТОР РЕАЛИСТИЧНЫХ ДАННЫХ')
     print('='*60 + '\n')
     
     conn = psycopg.connect(
@@ -31,22 +31,22 @@ def main():
     cur = conn.cursor()
     
     # 1. Очистка старых данных
-    print('Очистка старых данных...')
+    print('🗑️ Очистка старых данных...')
     cur.execute('TRUNCATE office_views, applications, contracts, payments RESTART IDENTITY CASCADE')
     conn.commit()
-    print('Очищено\n')
+    print('✅ Очищено\n')
     
     # 2. Получаем офисы
     cur.execute('SELECT id, office_number, floor, area_sqm, price_per_month, is_free FROM offices')
     offices = cur.fetchall()
-    print(f'Офисов: {len(offices)}')
+    print(f'📋 Офисов: {len(offices)}')
     
     # 3. Создаём/получаем клиентов
     cur.execute("SELECT id FROM users WHERE role_id = 3 AND login LIKE 'client_%'")
     users = [u[0] for u in cur.fetchall()]
     
     if len(users) < 30:
-        print('Создание новых клиентов...')
+        print('👥 Создание новых клиентов...')
         for i in range(30 - len(users)):
             cur.execute("""
                 INSERT INTO users (login, password_hash, email, phone, full_name, role_id, is_active)
@@ -62,7 +62,7 @@ def main():
         cur.execute('SELECT id FROM users WHERE role_id = 3')
         users = [u[0] for u in cur.fetchall()]
     
-    print(f'Клиентов: {len(users)}\n')
+    print(f'👥 Клиентов: {len(users)}\n')
     
     # 4. Параметры для реалистичной генерации
     np.random.seed(42)
@@ -77,7 +77,7 @@ def main():
     }
     
     # 5. Генерация просмотров (реалистичные паттерны)
-    print('Генерация просмотров с сезонными паттернами...')
+    print('📊 Генерация просмотров с сезонными паттернами...')
     view_count = 0
     
     for office in offices:
@@ -147,10 +147,10 @@ def main():
             print(f'   Обработано {office_id} офисов, создано {view_count} просмотров...')
     
     conn.commit()
-    print(f'Создано {view_count} просмотров\n')
+    print(f'✅ Создано {view_count} просмотров\n')
     
     # 6. Генерация заявок (на основе просмотров)
-    print('Генерация заявок...')
+    print('📝 Генерация заявок...')
     app_count = 0
     
     for office in offices:
@@ -217,10 +217,10 @@ def main():
             app_count += 1
     
     conn.commit()
-    print(f'Создано {app_count} заявок\n')
+    print(f'✅ Создано {app_count} заявок\n')
     
     # 7. Генерация договоров (реалистичная конверсия)
-    print('Генерация договоров...')
+    print('📄 Генерация договоров...')
     
     # Получаем одобренные заявки
     cur.execute("""
@@ -279,10 +279,10 @@ def main():
         contract_count += 1
     
     conn.commit()
-    print(f'Создано {contract_count} договоров\n')
+    print(f'✅ Создано {contract_count} договоров\n')
     
     # 8. Генерация платежей
-    print('Генерация платежей...')
+    print('💰 Генерация платежей...')
     
     cur.execute('SELECT id, start_date, end_date, total_amount FROM contracts')
     contracts = cur.fetchall()
@@ -325,7 +325,7 @@ def main():
             payment_count += 1
     
     conn.commit()
-    print(f'Создано {payment_count} платежей\n')
+    print(f'✅ Создано {payment_count} платежей\n')
     
     # 9. Финальная статистика
     print('🔍 ФИНАЛЬНАЯ СТАТИСТИКА:')
@@ -341,26 +341,26 @@ def main():
     """)
     stats = cur.fetchone()
     
-    print(f'Просмотров: {stats[0]}')
-    print(f'Заявок: {stats[1]}')
-    print(f'Договоров: {stats[2]}')
-    print(f'Платежей: {stats[3]}')
-    print(f'Клиентов: {stats[4]}')
-    print(f'Арендовано офисов: {stats[5]}')
-    print(f'Свободно офисов: {stats[6]}')
+    print(f'   👁️ Просмотров: {stats[0]}')
+    print(f'   📝 Заявок: {stats[1]}')
+    print(f'   📄 Договоров: {stats[2]}')
+    print(f'   💰 Платежей: {stats[3]}')
+    print(f'   👥 Клиентов: {stats[4]}')
+    print(f'   🏢 Арендовано офисов: {stats[5]}')
+    print(f'   🏢 Свободно офисов: {stats[6]}')
     
     if stats[1] > 0:
         conv_app = (stats[2] / stats[1]) * 100
-        print(f'Конверсия заявка→договор: {conv_app:.1f}%')
+        print(f'   📈 Конверсия заявка→договор: {conv_app:.1f}%')
     if stats[0] > 0:
         conv_view = (stats[1] / stats[0]) * 100
-        print(f'Конверсия просмотр→заявка: {conv_view:.1f}%')
+        print(f'   📈 Конверсия просмотр→заявка: {conv_view:.1f}%')
     
     cur.close()
     conn.close()
     
     print('\n' + '='*60)
-    print('ГЕНЕРАЦИЯ ЗАВЕРШЕНА!')
+    print('✅ ГЕНЕРАЦИЯ ЗАВЕРШЕНА!')
     print('='*60)
     print('\n💡 Теперь переобучите модель:')
     print('   docker exec -it business_center_api python /app/scripts/init_ml.py --force')

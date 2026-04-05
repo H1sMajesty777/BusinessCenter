@@ -122,13 +122,13 @@ def login(
             data={"sub": str(user_id), "login": user_login, "role_id": role_id}
         )
         
-        # ✅ Устанавливаем Cookie (вместо JSON)
+        # Устанавливаем Cookie
         set_token_cookie(response, access_token, refresh_token)
         
         # Сохраняем refresh токен в Redis
         store_refresh_token(str(user_id), refresh_token)
         
-        # ✅ Возвращаем только информацию о пользователе, без токенов в теле!
+        # Возвращаем только информацию о пользователе, без токенов в теле!
         return {
             "message": "Успешный вход",
             "user": {
@@ -152,7 +152,7 @@ def refresh_token(
     """
     Обновление access токена через refresh токен из Cookie
     """
-    # ✅ Берём refresh токен из Cookie
+    # Берём refresh токен из Cookie
     refresh_token = get_token_from_cookie(request, "refresh")
     
     if not refresh_token:
@@ -192,7 +192,7 @@ def refresh_token(
             data={"sub": str(user_id), "login": user_login, "role_id": role_id}
         )
         
-        # ✅ Обновляем Cookie
+        # Обновляем Cookie
         set_token_cookie(response, new_access_token)
         
         return {"message": "Токен обновлён"}
@@ -264,7 +264,7 @@ async def logout(
     # Удаляем refresh токен из Redis
     delete_refresh_token(user_id)
     
-    # ✅ Очищаем Cookie
+    # Очищаем Cookie
     clear_token_cookie(response)
     
     return {

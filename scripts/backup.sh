@@ -38,13 +38,13 @@ docker exec "$DB_CONTAINER" pg_dump -U "$DB_USER" "$DB_NAME" 2>> "$LOG_FILE" | g
 # Проверка, что бэкап создан
 if [ -f "$BACKUP_GZIP" ] && [ -s "$BACKUP_GZIP" ]; then
     SIZE=$(du -h "$BACKUP_GZIP" | cut -f1)
-    echo "[$(date +"%Y-%m-%d %H:%M:%S")] ✅ Бэкап создан: $BACKUP_GZIP ($SIZE)" >> "$LOG_FILE"
+    echo "[$(date +"%Y-%m-%d %H:%M:%S")] Бэкап создан: $BACKUP_GZIP ($SIZE)" >> "$LOG_FILE"
     
     # Создаем MD5 хеш для проверки целостности
     md5sum "$BACKUP_GZIP" > "$BACKUP_GZIP.md5"
     echo "[$(date +"%Y-%m-%d %H:%M:%S")] MD5 хеш: $(cat "$BACKUP_GZIP.md5")" >> "$LOG_FILE"
 else
-    echo "[$(date +"%Y-%m-%d %H:%M:%S")] ❌ ОШИБКА: Бэкап не создан!" >> "$LOG_FILE"
+    echo "[$(date +"%Y-%m-%d %H:%M:%S")] ОШИБКА: Бэкап не создан!" >> "$LOG_FILE"
     exit 1
 fi
 
@@ -60,7 +60,7 @@ ls -1t "$BACKUP_DIR"/backup_*.sql.gz.md5 2>/dev/null | tail -n +$((KEEP_LAST_N +
 
 # Итоговая статистика
 BACKUP_COUNT=$(ls -1 "$BACKUP_DIR"/backup_*.sql.gz 2>/dev/null | wc -l)
-echo "[$(date +"%Y-%m-%d %H:%M:%S")] ✅ Бэкап завершен. Всего бэкапов: $BACKUP_COUNT" >> "$LOG_FILE"
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Бэкап завершен. Всего бэкапов: $BACKUP_COUNT" >> "$LOG_FILE"
 echo "=========================================" >> "$LOG_FILE"
 
 echo "✅ Бэкап создан: $BACKUP_GZIP"

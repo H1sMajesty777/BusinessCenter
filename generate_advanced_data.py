@@ -29,22 +29,22 @@ def main():
     # =========================================================
     # 1. ОЧИСТКА
     # =========================================================
-    print('🗑️ Очистка старых данных...')
+    print('Очистка старых данных...')
     cur.execute('TRUNCATE office_views, applications, contracts, payments RESTART IDENTITY CASCADE')
     conn.commit()
-    print('✅ Очищено\n')
+    print('Очищено\n')
     
     # =========================================================
     # 2. ПОЛУЧАЕМ ОФИСЫ
     # =========================================================
     cur.execute('SELECT id, office_number, floor, price_per_month FROM offices')
     offices = cur.fetchall()
-    print(f'📋 Офисов: {len(offices)}')
+    print(f'Офисов: {len(offices)}')
     
     # =========================================================
     # 3. СОЗДАЁМ КЛИЕНТОВ
     # =========================================================
-    print('👥 Создание клиентов...')
+    print('Создание клиентов...')
     cur.execute("DELETE FROM users WHERE role_id = 3 AND login LIKE 'client_%'")
     
     for i in range(25):
@@ -62,12 +62,12 @@ def main():
     
     cur.execute('SELECT id FROM users WHERE role_id = 3')
     users = [u[0] for u in cur.fetchall()]
-    print(f'✅ Клиентов: {len(users)}\n')
+    print(f'Клиентов: {len(users)}\n')
     
     # =========================================================
     # 4. ГЕНЕРАЦИЯ ПРОСМОТРОВ
     # =========================================================
-    print('📊 Генерация просмотров...')
+    print('Генерация просмотров...')
     view_count = 0
     
     for office in offices:
@@ -100,12 +100,12 @@ def main():
             print(f'   Обработано {office_id} офисов, создано {view_count} просмотров...')
     
     conn.commit()
-    print(f'✅ Создано {view_count} просмотров\n')
+    print(f'Создано {view_count} просмотров\n')
     
     # =========================================================
     # 5. ГЕНЕРАЦИЯ ЗАЯВОК
     # =========================================================
-    print('📝 Генерация заявок...')
+    print('Генерация заявок...')
     app_count = 0
     
     for office in offices:
@@ -158,7 +158,7 @@ def main():
             app_count += 1
     
     conn.commit()
-    print(f'✅ Создано {app_count} заявок\n')
+    print(f'Создано {app_count} заявок\n')
     
     # =========================================================
     # 6. ГЕНЕРАЦИЯ ДОГОВОРОВ (ТОЛЬКО ДЛЯ ЧАСТИ ОФИСОВ)
@@ -223,12 +223,12 @@ def main():
         contract_count += 1
     
     conn.commit()
-    print(f'✅ Создано {contract_count} договоров\n')
+    print(f'Создано {contract_count} договоров\n')
     
     # =========================================================
     # 7. ГЕНЕРАЦИЯ ПЛАТЕЖЕЙ
     # =========================================================
-    print('💰 Генерация платежей...')
+    print('Генерация платежей...')
     
     cur.execute('SELECT id, start_date, end_date, total_amount FROM contracts')
     contracts = cur.fetchall()
@@ -269,12 +269,12 @@ def main():
             payment_count += 1
     
     conn.commit()
-    print(f'✅ Создано {payment_count} платежей\n')
+    print(f'Создано {payment_count} платежей\n')
     
     # =========================================================
     # 8. ПРОВЕРКА БАЛАНСА
     # =========================================================
-    print('🔍 ПРОВЕРКА БАЛАНСА КЛАССОВ:')
+    print('ПРОВЕРКА БАЛАНСА КЛАССОВ:')
     
     cur.execute("""
         SELECT 
@@ -288,13 +288,13 @@ def main():
     rented = balance[0] or 0
     not_rented = balance[1] or 0
     
-    print(f'   📍 Арендованы недавно: {rented} офисов')
-    print(f'   📍 Не арендованы: {not_rented} офисов')
+    print(f'Арендованы недавно: {rented} офисов')
+    print(f'Не арендованы: {not_rented} офисов')
     
     if rented > 0 and not_rented > 0:
-        print('   ✅ ОТЛИЧНЫЙ БАЛАНС! Модель успешно обучится.')
+        print('ОТЛИЧНЫЙ БАЛАНС! Модель успешно обучится.')
     else:
-        print('   ⚠️ ВНИМАНИЕ: Нет баланса классов!')
+        print('ВНИМАНИЕ: Нет баланса классов!')
     
     # =========================================================
     # 9. ФИНАЛЬНАЯ СТАТИСТИКА
@@ -310,20 +310,20 @@ def main():
     stats = cur.fetchone()
     
     print('\n' + '='*60)
-    print('📊 ФИНАЛЬНАЯ СТАТИСТИКА')
+    print('ФИНАЛЬНАЯ СТАТИСТИКА')
     print('='*60)
-    print(f'   👁️ Просмотров: {stats[0]}')
-    print(f'   📝 Заявок: {stats[1]}')
-    print(f'   📄 Договоров: {stats[2]}')
-    print(f'   💰 Платежей: {stats[3]}')
-    print(f'   👥 Клиентов: {stats[4]}')
+    print(f'    Просмотров: {stats[0]}')
+    print(f'    Заявок: {stats[1]}')
+    print(f'    Договоров: {stats[2]}')
+    print(f'    Платежей: {stats[3]}')
+    print(f'    Клиентов: {stats[4]}')
     
     if stats[1] > 0:
         conv_app = (stats[2] / stats[1]) * 100
-        print(f'   📈 Конверсия заявка→договор: {conv_app:.1f}%')
+        print(f'Конверсия заявка→договор: {conv_app:.1f}%')
     if stats[0] > 0:
         conv_view = (stats[1] / stats[0]) * 100
-        print(f'   📈 Конверсия просмотр→заявка: {conv_view:.1f}%')
+        print(f'Конверсия просмотр→заявка: {conv_view:.1f}%')
     
     # =========================================================
     # 10. ЗАВЕРШЕНИЕ
@@ -332,9 +332,9 @@ def main():
     conn.close()
     
     print('\n' + '='*60)
-    print('✅ ГЕНЕРАЦИЯ ЗАВЕРШЕНА УСПЕШНО!')
+    print(' ГЕНЕРАЦИЯ ЗАВЕРШЕНА УСПЕШНО!')
     print('='*60)
-    print('\n💡 Теперь выполни обучение модели через API:')
+    print('\n   Теперь выполни обучение модели через API:')
     print('   POST /api/ai/rental-prediction/train?force=true')
     print()
 
