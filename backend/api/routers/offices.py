@@ -4,13 +4,14 @@
 CRUD операции для офисов: создание, чтение, обновление, удаление
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional, Dict, Any
 import json
 from api.database import get_db
 from api.security import decode_token
 from api.models.office import OfficeCreate, OfficeUpdate, OfficeResponse
+from api.rate_limiter import limiter, RATE_LIMITS
 
 router = APIRouter(prefix="/api/offices", tags=["Offices"])
 security = HTTPBearer(auto_error=False)
@@ -65,6 +66,7 @@ def require_admin_or_manager(current_user: dict):
 
 @router.get("", response_model=List[OfficeResponse])
 def get_offices(
+    request: Request,
     floor: Optional[int] = Query(None, description="Фильтр по этажу"),
     max_price: Optional[float] = Query(None, description="Максимальная цена"),
     is_free: Optional[bool] = Query(None, description="Только свободные офисы")
@@ -147,7 +149,8 @@ def get_offices(
 
 
 @router.post("", status_code=201, response_model=OfficeResponse)
-def create_office(office: OfficeCreate, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def create_office(request: Request, office: OfficeCreate, current_user: dict = Depends(get_current_user)):
     """
     Создание нового офиса
     
@@ -214,7 +217,7 @@ def create_office(office: OfficeCreate, current_user: dict = Depends(get_current
 
 
 @router.get("/{office_id}", response_model=OfficeResponse)
-def get_office(office_id: int):
+def get_office(request: Request, office_id: int):
     """
     Получение данных офиса по ID
     
@@ -270,7 +273,8 @@ def get_office(office_id: int):
 
 
 @router.put("/{office_id}", response_model=OfficeResponse)
-def update_office(office_id: int, office: OfficeUpdate, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def update_office(request: Request, office_id: int, office: OfficeUpdate, current_user: dict = Depends(get_current_user)):
     """
     Обновление данных офиса
     
@@ -372,7 +376,8 @@ def update_office(office_id: int, office: OfficeUpdate, current_user: dict = Dep
 
 
 @router.delete("/{office_id}", response_model=dict)
-def delete_office(office_id: int, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def delete_office(request: Request, office_id: int, current_user: dict = Depends(get_current_user)):
     """
     Удаление офиса
     
@@ -412,7 +417,8 @@ def delete_office(office_id: int, current_user: dict = Depends(get_current_user)
 
 
 @router.get("/stats/summary", response_model=dict)
-def get_offices_stats(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_offices_stats(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Статистика по офисам
     

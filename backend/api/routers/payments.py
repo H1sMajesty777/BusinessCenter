@@ -4,13 +4,14 @@
 Учёт платежей за аренду офисов: создание, просмотр, статистика
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Body, Query
+from fastapi import APIRouter, HTTPException, Depends, Body, Query, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from datetime import date, datetime
 from api.database import get_db
 from api.security import decode_token
 from api.models.payment import PaymentCreate, PaymentUpdate, PaymentResponse
+from api.rate_limiter import limiter, RATE_LIMITS
 
 # Router с правильным префиксом
 router = APIRouter(prefix="/api/payments", tags=["Payments"])
@@ -61,7 +62,8 @@ def require_admin_or_manager(current_user: dict):
 # ===================================================================
 
 @router.post("", status_code=201, response_model=dict)
-def create_payment(payment: PaymentCreate = Body(...), current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def create_payment(request: Request, payment: PaymentCreate = Body(...), current_user: dict = Depends(get_current_user)):
     """
     Создание платежа
     
@@ -119,7 +121,9 @@ def create_payment(payment: PaymentCreate = Body(...), current_user: dict = Depe
 
 
 @router.get("", response_model=List[dict])
+@limiter.limit(RATE_LIMITS["authenticated"])
 def get_all_payments(
+    request: Request,
     limit: int = Query(default=100, ge=1, le=1000, description="Максимальное количество записей"),
     current_user: dict = Depends(get_current_user)
 ):
@@ -174,7 +178,8 @@ def get_all_payments(
 
 
 @router.get("/my", response_model=List[dict])
-def get_my_payments(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_my_payments(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Просмотр своих платежей
     
@@ -222,7 +227,8 @@ def get_my_payments(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/{payment_id}", response_model=dict)
-def get_payment(payment_id: int, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_payment(request: Request, payment_id: int, current_user: dict = Depends(get_current_user)):
     """
     Просмотр конкретного платежа по ID
     
@@ -281,7 +287,9 @@ def get_payment(payment_id: int, current_user: dict = Depends(get_current_user))
 
 
 @router.put("/{payment_id}", response_model=dict)
+@limiter.limit(RATE_LIMITS["authenticated"])
 def update_payment(
+    request: Request,
     payment_id: int,
     payment_update: PaymentUpdate = Body(...),
     current_user: dict = Depends(get_current_user)
@@ -352,7 +360,8 @@ def update_payment(
 
 
 @router.delete("/{payment_id}", response_model=dict)
-def delete_payment(payment_id: int, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def delete_payment(request: Request, payment_id: int, current_user: dict = Depends(get_current_user)):
     """
     Удаление платежа
     
@@ -390,7 +399,8 @@ def delete_payment(payment_id: int, current_user: dict = Depends(get_current_use
 
 
 @router.get("/stats", response_model=dict)
-def get_payment_stats(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_payment_stats(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Статистика платежей
     
@@ -475,7 +485,9 @@ def get_payment_stats(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/contract/{contract_id}", response_model=List[dict])
+@limiter.limit(RATE_LIMITS["authenticated"])
 def get_contract_payments(
+    request: Request,
     contract_id: int,
     current_user: dict = Depends(get_current_user)
 ):

@@ -4,12 +4,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from api.config import settings
 from datetime import datetime
+from api.rate_limiter import limiter, setup_rate_limiting, RATE_LIMITS
 
 app = FastAPI(
     title="Business Center API",
     description="API для системы учета аренды офисов",
     version="0.1.0"
 )
+
+# ==============================================
+# 🚦 RATE LIMITING
+# ==============================================
+setup_rate_limiting(app)
 
 
 # ==============================================

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from datetime import date, datetime
 from api.database import get_db
 from api.security import decode_token
 from api.models.contract import ContractCreate, ContractResponse
+from api.rate_limiter import limiter, RATE_LIMITS
 
 
 router = APIRouter(prefix="/api/contracts", tags=["Contracts"])
@@ -38,7 +39,8 @@ def require_admin_or_manager(current_user: dict):
 # ENDPOINTS
 
 @router.post("", status_code=201, response_model=dict)
-def create_contract(contract: ContractCreate = Body(...), current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def create_contract(request: Request, contract: ContractCreate = Body(...), current_user: dict = Depends(get_current_user)):
     """
     Создание договора аренды
     Доступ: Админ/Менеджер
@@ -95,7 +97,8 @@ def create_contract(contract: ContractCreate = Body(...), current_user: dict = D
 
 
 @router.get("", response_model=List[dict])
-def get_all_contracts(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_all_contracts(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Просмотр всех договоров
     Доступ: Админ/Менеджер
@@ -141,7 +144,8 @@ def get_all_contracts(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/my", response_model=List[dict])
-def get_my_contracts(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_my_contracts(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Просмотр своих договоров
     Доступ: Все авторизованные (клиент видит только свои)
@@ -185,7 +189,8 @@ def get_my_contracts(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/{contract_id}", response_model=dict)
-def get_contract(contract_id: int, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_contract(request: Request, contract_id: int, current_user: dict = Depends(get_current_user)):
     """
     Просмотр конкретного договора по ID
     Доступ: Админ/Менеджер или владелец договора
@@ -234,7 +239,9 @@ def get_contract(contract_id: int, current_user: dict = Depends(get_current_user
 
 
 @router.put("/{contract_id}/status", response_model=dict)
+@limiter.limit(RATE_LIMITS["authenticated"])
 def update_contract_status(
+    request: Request,
     contract_id: int, 
     status_id: int = Body(..., embed=True),
     current_user: dict = Depends(get_current_user)
@@ -267,7 +274,8 @@ def update_contract_status(
 
 
 @router.delete("/{contract_id}", response_model=dict)
-def delete_contract(contract_id: int, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def delete_contract(request: Request, contract_id: int, current_user: dict = Depends(get_current_user)):
     """
     Удаление договора
     Доступ: Админ/Менеджер

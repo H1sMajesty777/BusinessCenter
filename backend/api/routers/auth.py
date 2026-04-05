@@ -12,6 +12,7 @@ from api.security import (
     settings
 )
 from api.models.user import LoginRequest, Token, UserResponse, TokenRefresh
+from api.rate_limiter import limiter, RATE_LIMITS
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 security = HTTPBearer(auto_error=False)
@@ -64,7 +65,9 @@ def require_admin_or_manager(current_user: dict):
 # ===================================================================
 
 @router.post("/login")
+@limiter.limit(RATE_LIMITS["login"])
 def login(
+    request: Request,
     login_request: LoginRequest = Body(...),
     response: Response = None
 ):
@@ -141,6 +144,7 @@ def login(
 
 
 @router.post("/refresh")
+@limiter.limit(RATE_LIMITS["authenticated"])
 def refresh_token(
     request: Request,
     response: Response
@@ -199,7 +203,8 @@ def refresh_token(
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+async def get_me(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Просмотр своего профиля
     
@@ -236,6 +241,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/logout")
+@limiter.limit(RATE_LIMITS["authenticated"])
 async def logout(
     request: Request,
     response: Response,
@@ -268,7 +274,9 @@ async def logout(
 
 
 @router.post("/logout/all")
+@limiter.limit(RATE_LIMITS["authenticated"])
 async def logout_all(
+    request: Request,
     response: Response,
     current_user: dict = Depends(get_current_user)
 ):
@@ -291,7 +299,8 @@ async def logout_all(
 
 # Для обратной совместимости - получение токена в теле (только для мобильных приложений)
 @router.post("/mobile/login", response_model=Token)
-def mobile_login(login_request: LoginRequest = Body(...)):
+@limiter.limit(RATE_LIMITS["login"])
+def mobile_login(request: Request, login_request: LoginRequest = Body(...)):
     """
     Вход для мобильных приложений - токены в JSON теле (не в Cookie)
     """

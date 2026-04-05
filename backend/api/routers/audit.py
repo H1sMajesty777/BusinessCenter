@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional, Dict, Any
 from api.database import get_db
 from api.security import decode_token
 from api.models.audit import AuditLogCreate, AuditLogResponse
+from api.rate_limiter import limiter, RATE_LIMITS
 
 
 router = APIRouter(prefix="/api/audit", tags=["Audit"])
@@ -39,7 +40,9 @@ def require_admin(current_user: dict):
 # ENDPOINTS
 
 @router.get("", response_model=List[dict])
+@limiter.limit(RATE_LIMITS["admin"])
 def get_audit_log(
+    request: Request,
     limit: int = Query(default=100, ge=1, le=1000, description="Максимальное количество записей"),
     current_user: dict = Depends(get_current_user)
 ):
@@ -84,7 +87,8 @@ def get_audit_log(
 
 
 @router.get("/stats", response_model=dict)
-def get_audit_stats(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["admin"])
+def get_audit_stats(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Статистика журнала аудита
     Доступ: ТОЛЬКО АДМИН
@@ -143,7 +147,9 @@ def get_audit_stats(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("", status_code=201, response_model=dict)
+@limiter.limit(RATE_LIMITS["admin"])
 def create_audit_log(
+    request: Request,
     log: AuditLogCreate,
     current_user: dict = Depends(get_current_user)
 ):

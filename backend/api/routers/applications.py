@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, Body
+from fastapi import APIRouter, HTTPException, Depends, Body, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from datetime import datetime
 from api.database import get_db
 from api.security import decode_token
 from api.models.application import ApplicationCreate, ApplicationUpdate, ApplicationResponse
+from api.rate_limiter import limiter, RATE_LIMITS
 
 
 router = APIRouter(prefix="/api/applications", tags=["Applications"])
@@ -53,7 +54,8 @@ def require_admin_or_manager(current_user: dict):
 # ENDPOINTS
 
 @router.post("", status_code=201, response_model=dict)
-def create_application(app: ApplicationCreate = Body(...), current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def create_application(request: Request, app: ApplicationCreate = Body(...), current_user: dict = Depends(get_current_user)):
     """
     Создание заявки на просмотр офиса
     Доступ: Все авторизованные (клиент для себя, менеджер для клиента)
@@ -87,7 +89,8 @@ def create_application(app: ApplicationCreate = Body(...), current_user: dict = 
 
 
 @router.get("", response_model=List[dict])
-def get_all_applications(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_all_applications(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Просмотр всех заявок
     Доступ: Админ/Менеджер
@@ -130,7 +133,8 @@ def get_all_applications(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/my", response_model=List[dict])
-def get_my_applications(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_my_applications(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Просмотр своих заявок
     Доступ: Все
@@ -171,7 +175,8 @@ def get_my_applications(current_user: dict = Depends(get_current_user)):
 
 
 @router.put("/{app_id}/status", response_model=dict)
-def update_application_status(app_id: int, app_update: ApplicationUpdate = Body(...), current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def update_application_status(request: Request, app_id: int, app_update: ApplicationUpdate = Body(...), current_user: dict = Depends(get_current_user)):
     """
     Изменение статуса заявки
     Доступ: Админ/Менеджер
@@ -200,7 +205,8 @@ def update_application_status(app_id: int, app_update: ApplicationUpdate = Body(
 
 
 @router.delete("/{app_id}", response_model=dict)
-def delete_application(app_id: int, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def delete_application(request: Request, app_id: int, current_user: dict = Depends(get_current_user)):
     """
     Удаление заявки
     Доступ: Админ/Менеджер

@@ -4,13 +4,14 @@
 Отслеживание просмотров офисов пользователями для аналитики
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Body, Query
+from fastapi import APIRouter, HTTPException, Depends, Body, Query, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from datetime import datetime
 from api.database import get_db
 from api.security import decode_token
 from api.models.office_view import OfficeViewCreate, OfficeViewResponse
+from api.rate_limiter import limiter, RATE_LIMITS
 
 
 router = APIRouter(prefix="/api/office-views", tags=["OfficeViews"])
@@ -62,7 +63,8 @@ def require_admin_or_manager(current_user: dict):
 # ===================================================================
 
 @router.post("", status_code=201, response_model=dict)
-def create_office_view(view: OfficeViewCreate = Body(...), current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def create_office_view(request: Request, view: OfficeViewCreate = Body(...), current_user: dict = Depends(get_current_user)):
     """
     Запись просмотра офиса
     
@@ -114,7 +116,9 @@ def create_office_view(view: OfficeViewCreate = Body(...), current_user: dict = 
 
 
 @router.get("", response_model=List[dict])
+@limiter.limit(RATE_LIMITS["authenticated"])
 def get_all_office_views(
+    request: Request,
     limit: int = Query(default=100, ge=1, le=1000, description="Максимальное количество записей"),
     current_user: dict = Depends(get_current_user)
 ):
@@ -170,7 +174,8 @@ def get_all_office_views(
 
 
 @router.get("/my", response_model=List[dict])
-def get_my_office_views(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_my_office_views(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Просмотр своих просмотров офисов
     
@@ -216,7 +221,9 @@ def get_my_office_views(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/office/{office_id}", response_model=List[dict])
+@limiter.limit(RATE_LIMITS["authenticated"])
 def get_office_views(
+    request: Request,
     office_id: int,
     current_user: dict = Depends(get_current_user)
 ):
@@ -278,7 +285,8 @@ def get_office_views(
 
 
 @router.get("/stats", response_model=dict)
-def get_office_views_stats(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_office_views_stats(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Статистика просмотров офисов
     
@@ -345,7 +353,9 @@ def get_office_views_stats(current_user: dict = Depends(get_current_user)):
 
 
 @router.put("/{view_id}/contact", response_model=dict)
+@limiter.limit(RATE_LIMITS["authenticated"])
 def mark_as_contacted(
+    request: Request,
     view_id: int,
     is_contacted: bool = Body(..., embed=True),
     current_user: dict = Depends(get_current_user)
@@ -394,7 +404,9 @@ def mark_as_contacted(
 
 
 @router.delete("/{view_id}", response_model=dict)
+@limiter.limit(RATE_LIMITS["authenticated"])
 def delete_office_view(
+    request: Request,
     view_id: int,
     current_user: dict = Depends(get_current_user)
 ):

@@ -7,7 +7,7 @@
 """
 
 import numpy as np
-from fastapi import APIRouter, HTTPException, Depends, Query, Body
+from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
@@ -15,6 +15,7 @@ from api.database import get_db
 from api.security import decode_token
 from api.ml_models.office_rental_prediction import rental_predictor
 from api.ml_models import production_predictor
+from api.rate_limiter import limiter, RATE_LIMITS
 
 router = APIRouter(prefix="/api/ai/rental-prediction", tags=["AI Rental Prediction"])
 security = HTTPBearer(auto_error=False)
@@ -55,7 +56,9 @@ def require_admin(current_user: dict):
 # ===================================================================
 
 @router.post("/train", response_model=Dict[str, Any])
+@limiter.limit(RATE_LIMITS["ml_train"])
 def train_model(
+    request: Request,
     force: bool = Query(False, description="Принудительное переобучение"),
     current_user: dict = Depends(get_current_user)
 ):
@@ -83,7 +86,8 @@ def train_model(
 
 
 @router.get("/model/info", response_model=Dict[str, Any])
-def get_model_info(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_model_info(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Информация о текущей модели
     
@@ -95,7 +99,9 @@ def get_model_info(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/office/{office_id}", response_model=Dict[str, Any])
+@limiter.limit(RATE_LIMITS["ml_predict"])
 def predict_office_rental(
+    request: Request,
     office_id: int,
     current_user: dict = Depends(get_current_user)
 ):
@@ -122,7 +128,9 @@ def predict_office_rental(
 
 
 @router.get("/offices", response_model=List[Dict[str, Any]])
+@limiter.limit(RATE_LIMITS["authenticated"])
 def predict_multiple_offices(
+    request: Request,
     office_ids: str = Query(..., description="Список ID офисов через запятую"),
     current_user: dict = Depends(get_current_user)
 ):
@@ -164,7 +172,9 @@ def predict_multiple_offices(
 
 
 @router.get("/summary", response_model=Dict[str, Any])
+@limiter.limit(RATE_LIMITS["ml_predict"])
 def get_prediction_summary(
+    request: Request,
     floor: Optional[int] = Query(None, description="Фильтр по этажу"),
     min_price: Optional[float] = Query(None, description="Минимальная цена"),
     max_price: Optional[float] = Query(None, description="Максимальная цена"),
@@ -289,7 +299,9 @@ def get_prediction_summary(
 
 
 @router.get("/explain/{office_id}", response_model=Dict[str, Any])
+@limiter.limit(RATE_LIMITS["ml_predict"])
 def explain_prediction(
+    request: Request,
     office_id: int,
     current_user: dict = Depends(get_current_user)
 ):
@@ -353,7 +365,8 @@ def explain_prediction(
 
 
 @router.post("/sync", response_model=Dict[str, Any])
-def sync_and_retrain(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["ml_train"])
+def sync_and_retrain(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Синхронизация данных и переобучение модели
     
@@ -377,7 +390,9 @@ def sync_and_retrain(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/trends", response_model=Dict[str, Any])
+@limiter.limit(RATE_LIMITS["authenticated"])
 def get_rental_trends(
+    request: Request,
     days: int = Query(30, ge=7, le=365, description="Период анализа в днях"),
     current_user: dict = Depends(get_current_user)
 ):
@@ -453,7 +468,8 @@ def get_rental_trends(
 
 
 @router.get("/models/compare", response_model=Dict[str, Any])
-def compare_models(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def compare_models(request: Request, current_user: dict = Depends(get_current_user)):
     """Сравнение всех моделей в ансамбле"""
     require_admin_or_manager(current_user)
     
@@ -469,7 +485,8 @@ def compare_models(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/features/importance", response_model=Dict[str, Any])
-def get_feature_importance(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_feature_importance(request: Request, current_user: dict = Depends(get_current_user)):
     """Важность признаков для разных моделей"""
     require_admin_or_manager(current_user)
     
@@ -485,7 +502,8 @@ def get_feature_importance(current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/health", response_model=Dict[str, Any])
-def ml_health(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def ml_health(request: Request, current_user: dict = Depends(get_current_user)):
     """Health check ML модуля"""
     require_admin_or_manager(current_user)
     
@@ -509,7 +527,8 @@ def ml_health(current_user: dict = Depends(get_current_user)):
     }
 
 @router.get("/dashboard", response_model=Dict[str, Any])
-def get_model_dashboard(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_model_dashboard(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Дашборд метрик качества модели
     

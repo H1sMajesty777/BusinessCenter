@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from api.database import get_db
 from api.security import hash_password, verify_password, create_token, decode_token
 from api.models.user import UserCreate, UserUpdate, UserResponse, Token
+from api.rate_limiter import limiter, RATE_LIMITS
 
 # Router с правильным префиксом
 router = APIRouter(prefix="/api/users", tags=["Users"])
@@ -38,7 +39,8 @@ def require_admin(current_user: dict):
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
-def register_client(user: UserCreate):
+@limiter.limit(RATE_LIMITS["register"])
+def register_client(request: Request, user: UserCreate):
     """
     Регистрация нового пользователя
     
@@ -93,7 +95,8 @@ def register_client(user: UserCreate):
 
 
 @router.get("/me", response_model=UserResponse)
-def get_my_profile(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_my_profile(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Просмотр своего профиля
     Доступ: Все авторизованные
@@ -128,7 +131,8 @@ def get_my_profile(current_user: dict = Depends(get_current_user)):
 
 
 @router.put("/me", response_model=UserResponse)
-def update_my_profile(user_update: UserUpdate, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def update_my_profile(request: Request, user_update: UserUpdate, current_user: dict = Depends(get_current_user)):
     """
     Редактирование своего профиля
     Доступ: Все авторизованные
@@ -193,7 +197,9 @@ def update_my_profile(user_update: UserUpdate, current_user: dict = Depends(get_
 
 
 @router.get("", response_model=List[UserResponse])
+@limiter.limit(RATE_LIMITS["admin"])
 def get_all_users(
+    request: Request,
     limit: int = Query(default=100, ge=1, le=1000, description="Максимальное количество записей"),
     role_id: Optional[int] = Query(None, description="Фильтр по роли"),
     is_active: Optional[bool] = Query(None, description="Фильтр по активности"),
@@ -246,7 +252,8 @@ def get_all_users(
 
 
 @router.post("", status_code=201, response_model=UserResponse)
-def create_user(user: UserCreate, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["admin"])
+def create_user(request: Request, user: UserCreate, current_user: dict = Depends(get_current_user)):
     """
     Создание пользователя — ТОЛЬКО АДМИН
     
@@ -300,7 +307,8 @@ def create_user(user: UserCreate, current_user: dict = Depends(get_current_user)
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_user(request: Request, user_id: int, current_user: dict = Depends(get_current_user)):
     """
     Получение пользователя по ID
     Доступ: Админ или сам пользователь
@@ -340,7 +348,9 @@ def get_user(user_id: int, current_user: dict = Depends(get_current_user)):
 
 
 @router.put("/{user_id}", response_model=UserResponse)
+@limiter.limit(RATE_LIMITS["admin"])
 def update_user(
+    request: Request,
     user_id: int, 
     user_update: UserUpdate, 
     current_user: dict = Depends(get_current_user)
@@ -416,7 +426,8 @@ def update_user(
 
 
 @router.delete("/{user_id}", response_model=dict)
-def delete_user(user_id: int, current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["admin"])
+def delete_user(request: Request, user_id: int, current_user: dict = Depends(get_current_user)):
     """
     Удаление пользователя — ТОЛЬКО АДМИН
 
@@ -445,7 +456,8 @@ def delete_user(user_id: int, current_user: dict = Depends(get_current_user)):
 
 
 @router.get("/stats/summary", response_model=dict)
-def get_users_stats(current_user: dict = Depends(get_current_user)):
+@limiter.limit(RATE_LIMITS["admin"])
+def get_users_stats(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Статистика пользователей
     Доступ: Только админ

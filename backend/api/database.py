@@ -48,6 +48,26 @@ def get_redis():
             raise redis.ConnectionError(f"Не удалось подключиться к Redis: {e}")
     return _redis_client
 
+def check_redis_health() -> dict:
+    """Проверка здоровья Redis с информацией о персистентности"""
+    try:
+        redis_client = get_redis()
+        
+        # Проверяем конфигурацию персистентности
+        aof_enabled = redis_client.config_get('appendonly')
+        aof_fsync = redis_client.config_get('appendfsync')
+        
+        return {
+            "status": "healthy",
+            "persistence": {
+                "aof_enabled": aof_enabled.get('appendonly') == 'yes',
+                "aof_fsync": aof_fsync.get('appendfsync', 'everysec'),
+                "rdb_enabled": True
+            }
+        }
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}
+
 
 def close_redis():
     """Закрыть подключение к Redis"""

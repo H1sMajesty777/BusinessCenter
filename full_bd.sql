@@ -133,3 +133,58 @@ CREATE TABLE IF NOT EXISTS audit_log (
     new_values JSONB,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+-- ============================================================
+-- ИНДЕКСЫ ДЛЯ ОПТИМИЗАЦИИ ЗАПРОСОВ
+-- ============================================================
+
+-- 1. Индексы для audit_log (журнал аудита)
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_action_type ON audit_log(action_type);
+CREATE INDEX IF NOT EXISTS idx_audit_log_table_name ON audit_log(table_name);
+CREATE INDEX IF NOT EXISTS idx_audit_log_composite ON audit_log(created_at, action_type, table_name);
+
+-- 2. Индексы для office_views (просмотры офисов)
+CREATE INDEX IF NOT EXISTS idx_office_views_viewed_at ON office_views(viewed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_office_views_office_id ON office_views(office_id);
+CREATE INDEX IF NOT EXISTS idx_office_views_user_id ON office_views(user_id);
+CREATE INDEX IF NOT EXISTS idx_office_views_composite ON office_views(office_id, viewed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_office_views_user_office ON office_views(user_id, office_id);
+
+-- 3. Индексы для applications (заявки)
+CREATE INDEX IF NOT EXISTS idx_applications_created_at ON applications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_applications_office_id ON applications(office_id);
+CREATE INDEX IF NOT EXISTS idx_applications_user_id ON applications(user_id);
+CREATE INDEX IF NOT EXISTS idx_applications_status_id ON applications(status_id);
+CREATE INDEX IF NOT EXISTS idx_applications_composite ON applications(status_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_applications_office_status ON applications(office_id, status_id);
+
+-- 4. Индексы для contracts (договоры)
+CREATE INDEX IF NOT EXISTS idx_contracts_signed_at ON contracts(signed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_contracts_office_id ON contracts(office_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_user_id ON contracts(user_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_status_id ON contracts(status_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_dates ON contracts(start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_contracts_active ON contracts(office_id, status_id) WHERE status_id = 4;
+
+-- 5. Индексы для payments (платежи)
+CREATE INDEX IF NOT EXISTS idx_payments_payment_date ON payments(payment_date DESC);
+CREATE INDEX IF NOT EXISTS idx_payments_contract_id ON payments(contract_id);
+CREATE INDEX IF NOT EXISTS idx_payments_status_id ON payments(status_id);
+CREATE INDEX IF NOT EXISTS idx_payments_composite ON payments(contract_id, payment_date DESC);
+
+-- 6. Индексы для offices (офисы)
+CREATE INDEX IF NOT EXISTS idx_offices_floor ON offices(floor);
+CREATE INDEX IF NOT EXISTS idx_offices_is_free ON offices(is_free);
+CREATE INDEX IF NOT EXISTS idx_offices_price ON offices(price_per_month);
+CREATE INDEX IF NOT EXISTS idx_offices_composite ON offices(is_free, floor, price_per_month);
+
+-- 7. Индексы для users (пользователи)
+CREATE INDEX IF NOT EXISTS idx_users_login ON users(login);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active) WHERE is_active = TRUE;
+
+-- 8. Частичные индексы для частых запросов
+CREATE INDEX IF NOT EXISTS idx_offices_free_only ON offices(id, office_number, floor, price_per_month) WHERE is_free = TRUE;
+CREATE INDEX IF NOT EXISTS idx_contracts_active_only ON contracts(office_id, user_id, end_date) WHERE status_id = 4;
