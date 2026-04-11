@@ -29,6 +29,9 @@ COPY backend/ .
 # Создаём директории для ML моделей
 RUN mkdir -p /app/data/models /app/data/cache /app/logs/ml
 
+# Создать папку для скриптов
+RUN mkdir -p /app/scripts
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()" || exit 1

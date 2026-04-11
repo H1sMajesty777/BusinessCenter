@@ -72,20 +72,21 @@ business_center_pgadmin - pgAdmin 4 (порт 8080)
 
 ```bash
 # Копирование SQL скрипта
-docker cp full_bd.sql business_center_db:/tmp/init.sql
+docker cp database/init.sql business_center_db:/tmp/init.sql
 
 # Выполнение инициализации
 docker exec -it business_center_db psql -U postgres -d project -f /tmp/init.sql
+
 ```
 
 **5. Генерация тестовых данных**
 
 ```bash
 # Копирование генератора данных
-docker cp generate_advanced_data.py business_center_api:/app/generate_advanced_data.py
+docker cp scripts/generate_advanced_data.py business_center_api:/app/scripts/generate_advanced_data.py
 
 # Запуск генерации
-docker exec -it business_center_api python /app/generate_advanced_data.py
+docker exec -it business_center_api python /app/scripts/generate_advanced_data.py
 ```
 
 **6. Копирование ML модуля**

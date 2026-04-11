@@ -1,0 +1,88 @@
+{
+  "version": "20260411_142407",
+  "trained_at": "2026-04-11T14:24:07.477381",
+  "samples_count": 80,
+  "real_samples": 80,
+  "synthetic_samples": 0,
+  "feature_names": [
+    "floor",
+    "area_sqm",
+    "price_per_month",
+    "price_per_sqm",
+    "is_free",
+    "office_age_days",
+    "total_views",
+    "unique_viewers",
+    "avg_view_duration",
+    "contact_rate",
+    "views_7d",
+    "views_30d",
+    "views_90d",
+    "views_trend_30_90d",
+    "total_apps",
+    "approved_apps",
+    "rejected_apps",
+    "approval_rate",
+    "days_since_last_app",
+    "total_contracts",
+    "avg_contract_amount",
+    "active_contracts",
+    "competition_ratio",
+    "avg_price_on_floor",
+    "price_competition_ratio",
+    "free_on_floor",
+    "popularity_score"
+  ],
+  "feature_count": 27,
+  "metrics": {
+    "roc_auc": 1.0,
+    "average_precision": 1.0,
+    "brier_score": 0.00044834571517908994,
+    "accuracy": 1.0,
+    "cv_auc_mean": 1.0,
+    "cv_auc_std": 0.0
+  },
+  "feature_importance": [
+    {
+      "feature_index": 19,
+      "importance": 19.777635342963247
+    },
+    {
+      "feature_index": 20,
+      "importance": 5.270087441563639
+    },
+    {
+      "feature_index": 21,
+      "importance": 0.648813654558719
+    },
+    {
+      "feature_index": 4,
+      "importance": 0.017286324091836412
+    },
+    {
+      "feature_index": 14,
+      "importance": 0.003624585531955089
+    },
+    {
+      "feature_index": 13,
+      "importance": 0.0034289846960836754
+    },
+    {
+      "feature_index": 3,
+      "importance": 0.0029465084922294027
+    },
+    {
+      "feature_index": 9,
+      "importance": 0.002940137600928869
+    },
+    {
+      "feature_index": 6,
+      "importance": 0.002512330206919237
+    },
+    {
+      "feature_index": 12,
+      "importance": 0.0024063659055278282
+    }
+  ],
+  "data_hash": "ce67ff8d00fde08f36486c036a0bb3f5"
+}

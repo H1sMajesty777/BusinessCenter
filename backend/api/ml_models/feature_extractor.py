@@ -67,27 +67,27 @@ class FeatureExtractor:
             GROUP BY office_id
         ),
         
-        -- 2. Статистика заявок
+        -- 2. Статистика заявок (ИСПРАВЛЕНО)
         apps_stats AS (
             SELECT 
                 office_id,
                 COUNT(*) as total_apps,
-                COUNT(CASE WHEN status_id = (SELECT id FROM statuses WHERE code = 'approved' AND group_name = 'application') THEN 1 END) as approved_apps,
-                COUNT(CASE WHEN status_id = (SELECT id FROM statuses WHERE code = 'rejected' AND group_name = 'application') THEN 1 END) as rejected_apps,
+                COUNT(CASE WHEN status_id = (SELECT id FROM statuses WHERE code = 'approved' AND group_name = 'application' LIMIT 1) THEN 1 END) as approved_apps,
+                COUNT(CASE WHEN status_id = (SELECT id FROM statuses WHERE code = 'rejected' AND group_name = 'application' LIMIT 1) THEN 1 END) as rejected_apps,
                 EXTRACT(DAY FROM (NOW() - MAX(created_at))) as days_since_last_app,
-                COUNT(CASE WHEN status_id = (SELECT id FROM statuses WHERE code = 'approved' AND group_name = 'application') THEN 1 END)::float / NULLIF(COUNT(*), 0) as approval_rate
+                COUNT(CASE WHEN status_id = (SELECT id FROM statuses WHERE code = 'approved' AND group_name = 'application' LIMIT 1) THEN 1 END)::float / NULLIF(COUNT(*), 0) as approval_rate
             FROM applications
             WHERE created_at > NOW() - INTERVAL '180 days'
             GROUP BY office_id
         ),
-        
-        -- 3. Статистика договоров (упрощенная)
+
+        -- 3. Статистика договоров (ИСПРАВЛЕНО)
         contracts_stats AS (
             SELECT 
                 office_id,
                 COUNT(*) as total_contracts,
                 COALESCE(AVG(total_amount), 0) as avg_contract_amount,
-                COUNT(CASE WHEN status_id = (SELECT id FROM statuses WHERE code = 'active' AND group_name = 'contract') THEN 1 END) as active_contracts
+                COUNT(CASE WHEN status_id = (SELECT id FROM statuses WHERE code = 'active' AND group_name = 'contract' LIMIT 1) THEN 1 END) as active_contracts
             FROM contracts
             WHERE signed_at > NOW() - INTERVAL '365 days'
             GROUP BY office_id
