@@ -1,60 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import '../styles/dashboard.css';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
   const [offices, setOffices] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Временно моки, потом заменю на реальный API
+  // Мок-данные офисов
+  const mockOffices = [
+    { id: 1, office_number: "101", floor: 5, area_sqm: 45.5, price_per_month: 150000, is_free: true },
+    { id: 2, office_number: "205", floor: 2, area_sqm: 78.0, price_per_month: 150000, is_free: false },
+    { id: 3, office_number: "312", floor: 3, area_sqm: 32.0, price_per_month: 150000, is_free: true },
+    { id: 4, office_number: "418", floor: 4, area_sqm: 56.2, price_per_month: 150000, is_free: false },
+    { id: 5, office_number: "524", floor: 5, area_sqm: 92.0, price_per_month: 150000, is_free: true },
+    { id: 6, office_number: "102", floor: 1, area_sqm: 25.5, price_per_month: 150000, is_free: true },
+  ];
+
   useEffect(() => {
-    // TODO: заменить на fetch('http://localhost:8000/api/offices')
+    // Имитация загрузки
     setTimeout(() => {
-      setOffices([
-        { id: 1, office_number: "101", floor: 5, area_sqm: 45.5, price_per_month: 150000, is_free: true },
-        { id: 2, office_number: "205", floor: 2, area_sqm: 78.0, price_per_month: 150000, is_free: false },
-        { id: 3, office_number: "312", floor: 3, area_sqm: 32.0, price_per_month: 150000, is_free: true },
-      ]);
+      setOffices(mockOffices);
       setLoading(false);
     }, 500);
   }, []);
 
-  if (loading) return <div className="loading">Загрузка офисов...</div>;
+  if (loading) return <div>Загрузка офисов...</div>;
 
   return (
-    <div className="container">
-      <div className="page-header">
-        <h1>Найдите идеальный офис</h1>
-        <p>Более 50 офисов от 20 до 200 м² в центре города</p>
-      </div>
-
-      <div className="offices-grid">
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
+      <h1>Найдите идеальный офис</h1>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
         {offices.map(office => (
-          <div key={office.id} className="office-card">
-            <div className="office-image">
-              <div className="image-placeholder">
-                <i data-lucide="building-2" style={{ width: '48px', height: '48px' }}></i>
-              </div>
-            </div>
-            <div className="office-content">
-              <div className="office-header">
-                <span className="office-number">Офис {office.office_number}</span>
-                <span className="office-floor">{office.floor} этаж</span>
-              </div>
-              <div className="office-details">
-                <div className="detail-item">
-                  <div className="detail-label">Площадь</div>
-                  <div className="detail-value">{office.area_sqm} <small>м²</small></div>
-                </div>
-                <div className="detail-item">
-                  <div className="detail-label">Ставка</div>
-                  <div className="detail-value">{office.price_per_month.toLocaleString()} <small>₽/мес</small></div>
-                </div>
-              </div>
-              <div className="card-actions">
-                <button className="card-btn primary">Забронировать</button>
-                <button className="card-btn secondary">Подробнее</button>
-              </div>
-            </div>
+          <div key={office.id} style={{ border: '1px solid #ccc', padding: '16px', borderRadius: '8px' }}>
+            <h3>Офис {office.office_number}</h3>
+            <p>Этаж: {office.floor}</p>
+            <p>Площадь: {office.area_sqm} м²</p>
+            <p>Цена: {office.price_per_month.toLocaleString()} ₽/мес</p>
+            <button>Забронировать</button>
           </div>
         ))}
       </div>
