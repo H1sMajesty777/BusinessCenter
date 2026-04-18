@@ -1,59 +1,98 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
+import '../styles/login.css';
 
 const LoginPage = () => {
-  const [login, setLogin] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login: authLogin } = useAuth();
+  const [loginValue, setLoginValue] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [successMessage, setSuccessMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     
-    // Мок-проверка
-    if (login === 'admin' && password === 'admin123') {
-      localStorage.setItem('user', JSON.stringify({ login, role_id: 1 }));
-      navigate('/dashboard');
-    } else if (login === 'manager' && password === 'manager123') {
-      localStorage.setItem('user', JSON.stringify({ login, role_id: 2 }));
-      navigate('/dashboard');
-    } else if (login === 'client' && password === 'client123') {
-      localStorage.setItem('user', JSON.stringify({ login, role_id: 3 }));
-      navigate('/dashboard');
-    } else {
+    try {
+      const response = await api.post('/auth/login', { login: loginValue, password });
+      
+      // Сохраняем пользователя через контекст
+      authLogin(response.data.user);
+      
+      // Редирект по ролям
+      const roleId = response.data.user.role_id;
+      if (roleId === 1) {
+        navigate('/admin');
+      } else if (roleId === 2) {
+        navigate('/forecast');
+      } else {
+        navigate('/client-dashboard');
+      }
+    } catch (err) {
       setError('Неверный логин или пароль');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '100px auto', padding: '20px' }}>
-      <h2>Вход в систему</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Логин</label>
-          <input
-            type="text"
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            style={{ width: '100%', padding: '8px', margin: '8px 0' }}
-            required
-          />
+    <div className="login-container">
+      <div className="login-card">
+        <h2 className="login-title">Вход в систему</h2>
+        <p className="login-subtitle">Бизнес-центр · аренда офисов</p>
+        
+        {successMessage && <div className="login-success-banner">{successMessage}</div>}
+        {error && <div className="login-error-banner">{error}</div>}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="login-field">
+            <label className="login-label">Логин</label>
+            <input
+              type="text"
+              value={loginValue}
+              onChange={(e) => setLoginValue(e.target.value)}
+              className="login-input"
+              required
+            />
+          </div>
+          
+          <div className="login-field">
+            <label className="login-label">Пароль</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="login-input"
+              required
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={loading}
+            className="login-btn"
+          >
+            {loading ? 'Вход...' : 'Войти'}
+          </button>
+        </form>
+        
+        <div className="login-footer">
+          Нет аккаунта? <Link to="/register" className="login-link">Зарегистрироваться</Link>
         </div>
-        <div>
-          <label>Пароль</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '8px', margin: '8px 0' }}
-            required
-          />
-        </div>
-        <button type="submit" style={{ padding: '10px 20px', marginTop: '10px' }}>
-          Войти
-        </button>
-      </form>
+      </div>
     </div>
   );
 };
