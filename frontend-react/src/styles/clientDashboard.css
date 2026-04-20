@@ -172,6 +172,135 @@
   padding: 60px;
   color: #64748b;
 }
+/* Стили для избранного в личном кабинете */
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.favorite-card {
+  display: flex;
+  gap: 16px;
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.favorite-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.office-image-small {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.office-content {
+  flex: 1;
+}
+
+.office-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.office-number {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.office-floor {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+}
+
+.office-details-small {
+  display: flex;
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.detail-item {
+  text-align: center;
+}
+
+.detail-label {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.office-actions-small {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn-details-small {
+  flex: 1;
+  padding: 6px 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-small {
+  flex: 1;
+  padding: 6px 12px;
+  background: white;
+  color: #dc2626;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-small:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+@media (max-width: 640px) {
+  .favorite-card {
+    flex-direction: column;
+  }
+  
+  .office-image-small {
+    width: 100%;
+    height: 120px;
+  }
+}
 
 /* Responsive */
 @media (max-width: 768px) {

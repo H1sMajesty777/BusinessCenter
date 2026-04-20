@@ -1,0 +1,183 @@
+/* Image Slider Styles */
+.image-slider {
+  position: relative;
+  width: 100%;
+  background: #f0f0f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.slider-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.slider-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.3s ease-in-out;
+}
+
+.slider-slide {
+  min-width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slider-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Градиенты для слайдера */
+.gradient-bg {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: white;
+}
+
+.gradient-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.gradient-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.gradient-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.gradient-4 { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); }
+.gradient-5 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+.gradient-6 { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+
+.gradient-label {
+  font-size: 15px;
+  font-weight: 500;
+  background: rgba(0,0,0,0.3);
+  padding: 6px 16px;
+  border-radius: 30px;
+  backdrop-filter: blur(4px);
+}
+
+/* Заглушка */
+.slider-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #e2e8f0;
+  color: #94a3b8;
+}
+
+/* Стрелки */
+.slider-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+  color: #334155;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.slider-arrow:hover {
+  background: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.slider-arrow.prev { left: 12px; }
+.slider-arrow.next { right: 12px; }
+
+/* Точки */
+.slider-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+.slider-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.slider-dot.active {
+  background: white;
+  transform: scale(1.3);
+}
+
+/* Счётчик */
+.slider-counter {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+/* Размеры */
+.image-slider.large {
+  height: 320px;
+}
+
+.image-slider.medium {
+  height: 200px;
+}
+
+.image-slider.small {
+  height: 140px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .image-slider.large {
+    height: 240px;
+  }
+  
+  .image-slider.medium {
+    height: 160px;
+  }
+  
+  .slider-arrow {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .slider-arrow.prev { left: 8px; }
+  .slider-arrow.next { right: 8px; }
+  
+  .gradient-label {
+    font-size: 14px;
+  }
+}

@@ -359,3 +359,30 @@
   padding: 60px;
   color: #94a3b8;
 }
+/* Выравнивание иконок с текстом */
+.icon,
+svg.lucide {
+  vertical-align: middle;
+  display: inline-block;
+}
+
+/* Для кнопок с иконками */
+button svg,
+a svg {
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* Для заголовков */
+h1 svg,
+h2 svg,
+h3 svg {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+/* Для текста в таблицах */
+td svg {
+  vertical-align: middle;
+  margin-right: 4px;
+}

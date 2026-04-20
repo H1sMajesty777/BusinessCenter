@@ -8,11 +8,16 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Загрузка пользователя из localStorage при запуске
   useEffect(() => {
-    // Загружаем пользователя из localStorage при запуске
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Ошибка загрузки пользователя:', e);
+        setUser(null);
+      }
     }
     setLoading(false);
   }, []);
@@ -22,17 +27,21 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
-const logout = () => {
-  setUser(null);
-  localStorage.removeItem('user');
-  // Если есть токен в localStorage — тоже удалить
-  localStorage.removeItem('token');
-  localStorage.removeItem('access_token');
-};
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('access_token');
+  };
+
+  const updateUser = (userData) => {
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, login, logout, updateUser, loading }}>
+      {children}
     </AuthContext.Provider>
   );
 };

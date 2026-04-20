@@ -1,0 +1,42 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Основной шрифт для всего сайта — Montserrat */
+body {
+    font-family: "Montserrat", "Nata Sans", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    background: #f8fafc;
+    color: #0f172a;
+    line-height: 1.5;
+}
+
+/* Для заголовков — можно сделать жирнее */
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Montserrat", "Nata Sans", sans-serif;
+    font-weight: 600;
+    font-optical-sizing: auto;
+}
+
+/* Для акцентного текста (можно использовать Nata Sans) */
+.accent-text {
+    font-family: "Nata Sans", sans-serif;
+    font-weight: 500;
+}
+
+/* Для обычного текста */
+p, span, div, li, a {
+    font-family: "Montserrat", "Nata Sans", sans-serif;
+    font-optical-sizing: auto;
+}
+
+/* Для маленького текста (подписи, даты) */
+.small-text {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+}

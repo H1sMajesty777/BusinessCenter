@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import '../styles/forecast.css';
+import {ChartNoAxesCombined} from 'lucide-react';
 
 const ForecastPage = () => {
   const { user } = useAuth();
@@ -71,12 +72,13 @@ const ForecastPage = () => {
 
   return (
     <div className="forecast-container">
-      <h1 className="forecast-title">📊 Аналитика аренды</h1>
+      <h1 className="forecast-title">Аналитика аренды</h1>
       <p className="forecast-subtitle">AI-прогноз спроса на свободные офисы</p>
 
       {/* ГРАФИК С ЦВЕТНЫМИ СТОЛБЦАМИ */}
       <div className="chart-section">
-        <h2 className="section-title">📊 Прогноз спроса по офисам</h2>
+                <ChartNoAxesCombined size={40} style={{ marginRight: '6px' }} />
+                Прогноз по офисам
         <p className="section-subtitle">Вероятность аренды в процентах (зелёный — высокий, жёлтый — средний, красный — низкий)</p>
         
         <ResponsiveContainer width="100%" height={350}>

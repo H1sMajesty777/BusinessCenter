@@ -1,0 +1,422 @@
+/* Office Detail Page Styles */
+.office-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 14px;
+  margin-bottom: 24px;
+  padding: 8px 0;
+  transition: color 0.2s;
+}
+
+.back-btn:hover {
+  color: #1d4ed8;
+}
+
+.office-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+/* Левая колонка */
+.office-detail-left {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.office-image-large {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24px;
+  height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Удобства */
+.amenities-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 14px;
+}
+
+/* Правая колонка */
+.office-detail-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.office-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.office-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.office-address {
+  display: flex;
+  align-items: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.office-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-free {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-occupied {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Характеристики */
+.specs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.spec-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.spec-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.spec-icon {
+  color: #2563eb;
+  margin-bottom: 8px;
+}
+
+.spec-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.spec-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Описание */
+.description-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.description-section p {
+  color: #475569;
+  line-height: 1.6;
+}
+
+/* AI Прогноз */
+.forecast-section {
+  background: #f8fafc;
+  border-radius: 20px;
+  padding: 20px;
+  border-left: 4px solid;
+}
+
+.forecast-green {
+  border-left-color: #22c55e;
+  background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%);
+}
+
+.forecast-yellow {
+  border-left-color: #eab308;
+  background: linear-gradient(135deg, #fefce8 0%, #f8fafc 100%);
+}
+
+.forecast-red {
+  border-left-color: #ef4444;
+  background: linear-gradient(135deg, #fef2f2 0%, #f8fafc 100%);
+}
+
+.forecast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.forecast-title {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.forecast-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.forecast-bar-container {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.forecast-bar {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.3s;
+}
+
+.fill-green { background: #22c55e; }
+.fill-yellow { background: #eab308; }
+.fill-red { background: #ef4444; }
+
+.forecast-factors {
+  margin-top: 12px;
+}
+
+.factors-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.forecast-factors ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.forecast-factors li {
+  font-size: 13px;
+  color: #475569;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.forecast-factors li::before {
+  content: "•";
+  color: #2563eb;
+}
+
+/* Кнопка бронирования */
+.book-btn {
+  width: 100%;
+  padding: 16px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.book-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+/* Модальное окно */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 24px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.modal-header h3 {
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.modal-field {
+  margin-bottom: 20px;
+}
+
+.modal-field label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.modal-field input,
+.modal-field textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.modal-field input:focus,
+.modal-field textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.modal-cancel {
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.modal-save {
+  padding: 10px 20px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.modal-save:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .office-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .specs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .office-header {
+    flex-direction: column;
+  }
+  
+  .amenities-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .specs-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .office-title {
+    font-size: 24px;
+  }
+  
+  .office-image-large {
+    height: 250px;
+  }
+}
