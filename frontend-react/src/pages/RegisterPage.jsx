@@ -62,13 +62,12 @@ const RegisterPage = () => {
     setServerError('');
     
     try {
-      await api.post('/users', {
+      await api.post('/users/register', {
         login: formData.login,
         password: formData.password,
         email: formData.email,
         phone: formData.phone || null,
-        full_name: formData.full_name || null,
-        role_id: 3
+        full_name: formData.full_name || null
       });
       
       navigate('/login', { state: { message: 'Регистрация успешна! Теперь войдите в систему.' } });

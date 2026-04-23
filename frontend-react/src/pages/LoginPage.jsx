@@ -1,3 +1,4 @@
+// frontend/src/pages/LoginPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,20 +28,20 @@ const LoginPage = () => {
     setError('');
     
     try {
-      const response = await api.post('/auth/login', { login: loginValue, password });
+      // Шаг 1: Логин — бэкенд устанавливает HttpOnly Cookie
+      await api.post('/auth/login', { login: loginValue, password });
       
-      // Сохраняем пользователя через контекст
-      authLogin(response.data.user);
+      // Токены теперь в куках, localStorage не трогаем!
       
-      // Редирект по ролям
-      const roleId = response.data.user.role_id;
-      if (roleId === 1) {
-        navigate('/admin');
-      } else if (roleId === 2) {
-        navigate('/forecast');
-      } else {
-        navigate('/client-dashboard');
-      }
+      // Шаг 2: Получаем пользователя (кука отправляется автоматически)
+      const userResponse = await api.get('/auth/me');
+      authLogin(userResponse.data);
+      
+      // Шаг 3: Редирект по роли
+      const roleId = userResponse.data.role_id;
+      if (roleId === 1) navigate('/admin');
+      else if (roleId === 2) navigate('/forecast');
+      else navigate('/client-dashboard');
     } catch (err) {
       setError('Неверный логин или пароль');
     } finally {

@@ -1,3 +1,4 @@
+// frontend/src/components/Header.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -44,8 +45,8 @@ const Header = () => {
     return () => window.removeEventListener('scroll', controlHeader);
   }, [lastScrollY]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
     setIsMobileMenuOpen(false);
   };

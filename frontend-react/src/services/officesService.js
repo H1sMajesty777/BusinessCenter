@@ -4,6 +4,7 @@ import api from './api';
 export const getOffices = async (filters = {}) => {
   const params = new URLSearchParams();
   if (filters.floor) params.append('floor', filters.floor);
+  if (filters.min_price) params.append('min_price', filters.min_price);
   if (filters.max_price) params.append('max_price', filters.max_price);
   if (filters.is_free !== undefined && filters.is_free !== '') {
     params.append('is_free', filters.is_free);

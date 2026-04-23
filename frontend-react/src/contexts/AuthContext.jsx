@@ -1,4 +1,6 @@
+// frontend/src/contexts/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import api from '../services/api';
 
 const AuthContext = createContext();
 
@@ -8,30 +10,40 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Загрузка пользователя из localStorage при запуске
+  // Загрузка пользователя при старте
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    const loadUser = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Ошибка загрузки пользователя:', e);
+        // Пробуем загрузить пользователя через куку
+        const response = await api.get('/auth/me');
+        setUser(response.data);
+      } catch (error) {
+        // Если нет куки или она истекла — пользователь не авторизован
+        console.log('Пользователь не авторизован');
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+    
+    loadUser();
   }, []);
 
   const login = (userData) => {
     setUser(userData);
+    // Сохраняем в localStorage только для удобства (не для безопасности!)
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Ошибка при выходе:', error);
+    }
     setUser(null);
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('access_token');
+    // Куки будут удалены бэкендом
   };
 
   const updateUser = (userData) => {

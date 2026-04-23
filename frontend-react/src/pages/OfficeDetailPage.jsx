@@ -7,7 +7,7 @@ import {
   CheckCircle, XCircle, Wifi, Car, Shield, Wind,
   Coffee, Maximize2, Bath, DoorOpen, Calendar, Clock,
   TrendingUp, TrendingDown, Minus, AlertCircle,
-  ArrowLeft, Heart, CalendarCheck, Phone, Mail
+  ArrowLeft, Heart, CalendarCheck, Phone, Mail, X, MessageSquare, Brain, Users, Star
 } from 'lucide-react';
 import '../styles/officeDetail.css';
 
@@ -27,6 +27,7 @@ const OfficeDetailPage = () => {
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       try {
         const [officeData, forecastData] = await Promise.all([
           api.get(`/offices/${id}`),
@@ -36,12 +37,15 @@ const OfficeDetailPage = () => {
         setForecast(forecastData.data);
       } catch (error) {
         console.error('Ошибка загрузки офиса:', error);
+        if (error.response?.status === 404) {
+          navigate('/dashboard');
+        }
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, [id]);
+  }, [id, navigate]);
 
   const handleBook = () => {
     if (user) {
@@ -65,7 +69,7 @@ const OfficeDetailPage = () => {
       setApplicationData({ desired_date: '', comment: '' });
     } catch (error) {
       console.error('Ошибка отправки заявки:', error);
-      alert('Ошибка при отправке заявки');
+      alert(error.response?.data?.detail || 'Ошибка при отправке заявки');
     } finally {
       setSubmitting(false);
     }
@@ -125,7 +129,7 @@ const OfficeDetailPage = () => {
     return <div className="empty-state">Офис не найден</div>;
   }
 
-  const amenities = office.amenities ? JSON.parse(office.amenities) : {};
+  const amenities = office.amenities ? (typeof office.amenities === 'string' ? JSON.parse(office.amenities) : office.amenities) : {};
 
   return (
     <div className="office-detail-container">
@@ -135,7 +139,6 @@ const OfficeDetailPage = () => {
       </button>
 
       <div className="office-detail-grid">
-        {/* Левая колонка — изображение и удобства */}
         <div className="office-detail-left">
           <div className="office-image-large">
             <Building2 size={80} color="white" opacity={0.8} />
@@ -158,7 +161,6 @@ const OfficeDetailPage = () => {
           )}
         </div>
 
-        {/* Правая колонка — информация */}
         <div className="office-detail-right">
           <div className="office-header">
             <div>
@@ -202,7 +204,6 @@ const OfficeDetailPage = () => {
             </div>
           )}
 
-          {/* AI Прогноз */}
           {forecast && (
             <div className={`forecast-section forecast-${getForecastColor(forecast.probability)}`}>
               <div className="forecast-header">
@@ -212,34 +213,37 @@ const OfficeDetailPage = () => {
                 </div>
                 <div className="forecast-badge">
                   {getForecastIcon(forecast.probability)}
-                  <span>{forecast.probability}%</span>
+                  <span>{forecast.probability_percent || Math.round(forecast.probability * 100)}%</span>
                 </div>
               </div>
               <div className="forecast-bar-container">
                 <div 
                   className={`forecast-bar fill-${getForecastColor(forecast.probability)}`}
-                  style={{ width: `${forecast.probability}%` }}
+                  style={{ width: `${forecast.probability_percent || forecast.probability * 100}%` }}
                 />
               </div>
-              <div className="forecast-factors">
-                <div className="factors-title">Ключевые факторы:</div>
-                <ul>
-                  {forecast.factors?.map((factor, idx) => (
-                    <li key={idx}>{factor}</li>
-                  ))}
-                </ul>
-              </div>
+              {forecast.top_factors && forecast.top_factors.length > 0 && (
+                <div className="forecast-factors">
+                  <div className="factors-title">Ключевые факторы:</div>
+                  <ul>
+                    {forecast.top_factors.map((factor, idx) => (
+                      <li key={idx}>{factor.feature}: {(factor.importance * 100).toFixed(1)}%</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
-          <button className="book-btn" onClick={handleBook}>
-            <CalendarCheck size={18} style={{ marginRight: '8px' }} />
-            Оставить заявку
-          </button>
+          {office.is_free && (
+            <button className="book-btn" onClick={handleBook}>
+              <CalendarCheck size={18} style={{ marginRight: '8px' }} />
+              Оставить заявку
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Модальное окно заявки */}
       {showApplicationForm && (
         <div className="modal-overlay" onClick={() => setShowApplicationForm(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>

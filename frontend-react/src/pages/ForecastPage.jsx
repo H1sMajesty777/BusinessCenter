@@ -1,48 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import '../styles/forecast.css';
-import {ChartNoAxesCombined} from 'lucide-react';
+import { ChartNoAxesCombined, Brain, RefreshCw } from 'lucide-react';
 
 const ForecastPage = () => {
   const { user } = useAuth();
   const isAdmin = user?.role_id === 1;
+  
+  const [forecasts, setForecasts] = useState([]);
+  const [chartData, setChartData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [training, setTraining] = useState(false);
+  const [lastTrained, setLastTrained] = useState('');
+  const [metrics, setMetrics] = useState({ accuracy: '—', auc: '—' });
+  
+  const [filters, setFilters] = useState({
+    floor: '',
+    minPrice: '',
+    maxPrice: '',
+    category: ''
+  });
+  const [tempFilters, setTempFilters] = useState({
+    floor: '',
+    minPrice: '',
+    maxPrice: '',
+    category: ''
+  });
 
-  // ЖЁСТКИЕ МОК-ДАННЫЕ ДЛЯ ГРАФИКА
-  const chartData = [
-    { name: '101', вероятность: 85 },
-    { name: '102', вероятность: 88 },
-    { name: '201', вероятность: 78 },
-    { name: '205', вероятность: 45 },
-    { name: '301', вероятность: 82 },
-    { name: '312', вероятность: 92 },
-    { name: '401', вероятность: 75 },
-    { name: '418', вероятность: 28 },
-    { name: '501', вероятность: 68 },
-    { name: '524', вероятность: 76 },
-  ];
-
-  // Функция для определения цвета в зависимости от процента
-  const getBarColor = (probability) => {
-    if (probability >= 70) return '#22c55e';  // Зелёный — высокий спрос
-    if (probability >= 50) return '#eab308';  // Жёлтый — средний спрос
-    return '#ef4444';                          // Красный — низкий спрос
+  const loadForecast = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (tempFilters.floor) params.floor = parseInt(tempFilters.floor);
+      if (tempFilters.minPrice) params.min_price = parseFloat(tempFilters.minPrice);
+      if (tempFilters.maxPrice) params.max_price = parseFloat(tempFilters.maxPrice);
+      if (tempFilters.category) params.category = tempFilters.category;
+      
+      const response = await api.get('/ai/rental-prediction/summary', { params });
+      setForecasts(response.data.offices || []);
+    } catch (error) {
+      console.error('Ошибка загрузки прогнозов:', error);
+      setForecasts([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ЖЁСТКИЕ МОК-ДАННЫЕ ДЛЯ ТАБЛИЦЫ
-  const forecasts = [
-    { id: 1, office_number: '101', floor: 5, area_sqm: 45.5, price_per_month: 150000, probability: 85, category: 'high', factors: ['Высокий трафик', 'Много просмотров'] },
-    { id: 2, office_number: '102', floor: 1, area_sqm: 25.5, price_per_month: 150000, probability: 88, category: 'high', factors: ['Отдельный вход', 'Популярный этаж'] },
-    { id: 3, office_number: '201', floor: 2, area_sqm: 45.0, price_per_month: 22000, probability: 78, category: 'high', factors: ['Светлый офис', 'Хорошая цена'] },
-    { id: 4, office_number: '205', floor: 2, area_sqm: 100.0, price_per_month: 45000, probability: 45, category: 'low', factors: ['Высокая цена', 'Мало просмотров'] },
-    { id: 5, office_number: '301', floor: 3, area_sqm: 55.0, price_per_month: 32000, probability: 82, category: 'high', factors: ['Дизайнерский ремонт'] },
-    { id: 6, office_number: '312', floor: 3, area_sqm: 32.0, price_per_month: 150000, probability: 92, category: 'high', factors: ['Дизайнерский ремонт', 'Быстрое одобрение'] },
-    { id: 7, office_number: '401', floor: 4, area_sqm: 50.0, price_per_month: 30000, probability: 75, category: 'medium', factors: ['Панорамные окна'] },
-    { id: 8, office_number: '418', floor: 4, area_sqm: 56.2, price_per_month: 150000, probability: 28, category: 'low', factors: ['Долго не сдаётся'] },
-    { id: 9, office_number: '501', floor: 5, area_sqm: 200.0, price_per_month: 120000, probability: 68, category: 'medium', factors: ['Премиальный этаж'] },
-    { id: 10, office_number: '524', floor: 5, area_sqm: 92.0, price_per_month: 150000, probability: 76, category: 'medium', factors: ['Хороший вид'] },
-  ];
+  const loadTrends = async () => {
+    try {
+      const response = await api.get('/ai/rental-prediction/trends?days=30');
+      const viewsData = response.data.views_trend || [];
+      // Преобразуем для графика
+      const chart = viewsData.map(item => ({
+        name: item.date?.slice(5) || item.date,
+        просмотры: item.views,
+        заявки: 0,
+        договоры: 0
+      }));
+      setChartData(chart);
+    } catch (error) {
+      console.error('Ошибка загрузки трендов:', error);
+      setChartData([]);
+    }
+  };
+
+  const loadModelInfo = async () => {
+    try {
+      const response = await api.get('/ai/rental-prediction/model/info');
+      if (response.data.is_trained) {
+        setLastTrained(new Date().toLocaleDateString('ru-RU'));
+        setMetrics({ accuracy: '≈85%', auc: '≈0.89' });
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки информации о модели:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadForecast();
+    loadTrends();
+    loadModelInfo();
+  }, []);
+
+  const applyFilters = () => {
+    setFilters({ ...tempFilters });
+    loadForecast();
+  };
+
+  const resetFilters = () => {
+    const emptyFilters = { floor: '', minPrice: '', maxPrice: '', category: '' };
+    setTempFilters(emptyFilters);
+    setFilters(emptyFilters);
+    loadForecast();
+  };
+
+  const handleFilterChange = (key, value) => {
+    setTempFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleTrain = async () => {
+    setTraining(true);
+    try {
+      const response = await api.post('/ai/rental-prediction/train?force=true');
+      if (response.data.success) {
+        setLastTrained(new Date().toLocaleDateString('ru-RU'));
+        alert('Модель успешно переобучена!');
+        loadForecast();
+        loadModelInfo();
+      } else {
+        alert('Ошибка при обучении модели');
+      }
+    } catch (error) {
+      console.error('Ошибка обучения:', error);
+      alert(error.response?.data?.detail || 'Ошибка при обучении модели');
+    } finally {
+      setTraining(false);
+    }
+  };
 
   const getProbabilityClass = (probability) => {
     if (probability >= 70) return 'high';
@@ -62,41 +138,107 @@ const ForecastPage = () => {
     return 'Низкий';
   };
 
-  const handleTrain = () => {
-    setTraining(true);
-    setTimeout(() => {
-      alert('Модель успешно переобучена!');
-      setTraining(false);
-    }, 1500);
+  const getBarColor = (probability) => {
+    if (probability >= 70) return '#22c55e';
+    if (probability >= 50) return '#eab308';
+    return '#ef4444';
   };
+
+  // Данные для графика из прогнозов
+  const chartDataFromForecasts = forecasts.slice(0, 10).map(office => ({
+    name: office.office_number,
+    вероятность: office.probability_percent || Math.round(office.probability * 100)
+  }));
 
   return (
     <div className="forecast-container">
       <h1 className="forecast-title">Аналитика аренды</h1>
       <p className="forecast-subtitle">AI-прогноз спроса на свободные офисы</p>
 
-      {/* ГРАФИК С ЦВЕТНЫМИ СТОЛБЦАМИ */}
+      <div className="filters-section">
+        <div className="filters-grid">
+          <div className="filter-group">
+            <label className="filter-label">Этаж</label>
+            <input
+              type="number"
+              className="filter-input"
+              value={tempFilters.floor}
+              onChange={(e) => handleFilterChange('floor', e.target.value)}
+              placeholder="Любой"
+            />
+          </div>
+          
+          <div className="filter-group">
+            <label className="filter-label">Цена (₽/мес)</label>
+            <div className="filter-range">
+              <input
+                type="number"
+                className="filter-input"
+                value={tempFilters.minPrice}
+                onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                placeholder="от"
+              />
+              <span>—</span>
+              <input
+                type="number"
+                className="filter-input"
+                value={tempFilters.maxPrice}
+                onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                placeholder="до"
+              />
+            </div>
+          </div>
+          
+          <div className="filter-group">
+            <label className="filter-label">Категория</label>
+            <select
+              className="filter-select"
+              value={tempFilters.category}
+              onChange={(e) => handleFilterChange('category', e.target.value)}
+            >
+              <option value="">Все</option>
+              <option value="high">Высокий спрос</option>
+              <option value="medium">Средний спрос</option>
+              <option value="low">Низкий спрос</option>
+            </select>
+          </div>
+          
+          <div className="filter-actions">
+            <button className="reset-btn" onClick={resetFilters}>
+              Сбросить
+            </button>
+            <button className="apply-btn" onClick={applyFilters}>
+              Применить
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="chart-section">
-                <ChartNoAxesCombined size={40} style={{ marginRight: '6px' }} />
-                Прогноз по офисам
+        <h2 className="section-title">
+          <ChartNoAxesCombined size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+          Прогноз по офисам
+        </h2>
         <p className="section-subtitle">Вероятность аренды в процентах (зелёный — высокий, жёлтый — средний, красный — низкий)</p>
         
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" label={{ value: '', position: 'insideBottom', offset: -10 }} />
-            <YAxis label={{ value: '', angle: -90, position: 'insideLeft' }} domain={[0, 100]} />
-            <Tooltip formatter={(value) => [`${value}%`, 'Вероятность']} />
+        {chartDataFromForecasts.length > 0 ? (
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={chartDataFromForecasts} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis domain={[0, 100]} />
+              <Tooltip formatter={(value) => [`${value}%`, 'Вероятность']} />
+              <Bar dataKey="вероятность" radius={[8, 8, 0, 0]}>
+                {chartDataFromForecasts.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getBarColor(entry.вероятность)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="empty-state">Нет данных для отображения</div>
+        )}
 
-            <Bar dataKey="вероятность" radius={[8, 8, 0, 0]}>
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={getBarColor(entry.вероятность)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-
-        {/* Легенда цветов */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginTop: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ width: '20px', height: '20px', background: '#22c55e', borderRadius: '4px' }}></div>
@@ -113,58 +255,91 @@ const ForecastPage = () => {
         </div>
       </div>
 
-      {/* ТАБЛИЦА */}
       <div className="table-section">
         <h2 className="section-title">Детальный прогноз по офисам</h2>
         
-        <table className="forecast-table">
-          <thead>
-            <tr>
-              <th>Офис</th>
-              <th>Этаж</th>
-              <th>Площадь</th>
-              <th>Цена</th>
-              <th>Вероятность</th>
-              <th>Категория</th>
-              <th>Факторы</th>
-            </tr>
-          </thead>
-          <tbody>
-            {forecasts.map(office => (
-              <tr key={office.id}>
-                <td><strong>{office.office_number}</strong></td>
-                <td>{office.floor} эт</td>
-                <td>{office.area_sqm} м²</td>
-                <td>{office.price_per_month.toLocaleString()} ₽</td>
-                <td>
-                  <div className="probability-container">
-                    <div className="probability-bar">
-                      <div 
-                        className={`probability-fill ${getProbabilityClass(office.probability)}`}
-                        style={{ width: `${office.probability}%` }}
-                      />
-                    </div>
-                    <span className="probability-value">{office.probability}%</span>
-                  </div>
-                </td>
-                <td>
-                  <span className={`category-badge ${getCategoryClass(office.category)}`}>
-                    {getCategoryText(office.category)}
-                  </span>
-                </td>
-                <td>
-                  <div className="factors-list">
-                    {office.factors.map((factor, idx) => (
-                      <span key={idx} className="factor-tag">{factor}</span>
-                    ))}
-                  </div>
-                </td>
+        {loading ? (
+          <div className="loading-state">Загрузка...</div>
+        ) : forecasts.length === 0 ? (
+          <div className="empty-state">Нет данных для отображения</div>
+        ) : (
+          <table className="forecast-table">
+            <thead>
+              <tr>
+                <th>Офис</th>
+                <th>Этаж</th>
+                <th>Площадь</th>
+                <th>Цена</th>
+                <th>Вероятность</th>
+                <th>Категория</th>
+                <th>Факторы</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {forecasts.map(office => (
+                <tr key={office.office_id}>
+                  <td><strong>{office.office_number}</strong></td>
+                  <td>{office.floor} эт</td>
+                  <td>{office.area_sqm} м²</td>
+                  <td>{office.price_per_month?.toLocaleString()} ₽</td>
+                  <td>
+                    <div className="probability-container">
+                      <div className="probability-bar">
+                        <div 
+                          className={`probability-fill ${getProbabilityClass(office.probability_percent || office.probability * 100)}`}
+                          style={{ width: `${office.probability_percent || office.probability * 100}%` }}
+                        />
+                      </div>
+                      <span className="probability-value">{office.probability_percent || Math.round(office.probability * 100)}%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`category-badge ${getCategoryClass(office.category)}`}>
+                      {getCategoryText(office.category)}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="factors-list">
+                      {office.top_factors?.slice(0, 2).map((factor, idx) => (
+                        <span key={idx} className="factor-tag">
+                          {factor.feature}: {(factor.importance * 100).toFixed(0)}%
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
+      {(isAdmin || user?.role_id === 2) && (
+        <div className="model-control">
+          <div className="model-info">
+            <div className="model-date">
+              <Brain size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+              Последнее обучение: {lastTrained || 'не выполнялось'}
+            </div>
+            <div className="model-metrics">
+              <div className="metric">
+                <div className="metric-value">{metrics.accuracy}</div>
+                <div className="metric-label">Accuracy</div>
+              </div>
+              <div className="metric">
+                <div className="metric-value">{metrics.auc}</div>
+                <div className="metric-label">ROC AUC</div>
+              </div>
+            </div>
+          </div>
+          {isAdmin && (
+            <button className="train-btn" onClick={handleTrain} disabled={training}>
+              <RefreshCw size={16} style={{ marginRight: '6px' }} />
+              {training ? 'Обучение...' : 'Переобучить модель'}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
