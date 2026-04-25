@@ -1,0 +1,271 @@
+/* src/styles/authPage.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.auth-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.auth-wrapper {
+  position: relative;
+  width: 1000px;
+  max-width: 90%;
+  height: 600px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+}
+
+/* Панели */
+.auth-panel {
+  flex: 1;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+/* Левая панель — приветствие (синий фон) */
+.auth-panel-left {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-content {
+  text-align: center;
+  padding: 40px;
+}
+
+.panel-icon {
+  margin-bottom: 24px;
+}
+
+.panel-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.panel-subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 40px;
+}
+
+.panel-features {
+  text-align: left;
+  display: inline-block;
+  margin-top: 20px;
+}
+
+.feature {
+  padding: 8px 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Правая панель — форма */
+.auth-panel-right {
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-container {
+  width: 100%;
+  max-width: 360px;
+  padding: 40px;
+  position: relative;
+}
+
+/* Формы */
+.auth-form {
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.login-form,
+.register-form {
+  display: block;
+}
+
+/* Анимация переключения */
+.auth-wrapper.show-register .auth-panel-left {
+  transform: translateX(100%);
+}
+
+.auth-wrapper.show-register .auth-panel-right {
+  transform: translateX(-100%);
+}
+
+/* Когда показываем регистрацию — скрываем вход и наоборот */
+.auth-wrapper.show-login .register-form {
+  display: none;
+}
+
+.auth-wrapper.show-register .login-form {
+  display: none;
+}
+
+/* Стили формы */
+.form-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.form-subtitle {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+.form-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.form-group .input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 12px 12px 42px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.form-group input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+
+.submit-btn:hover {
+  background: #1d4ed8;
+}
+
+.submit-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 20px;
+  color: #991b1b;
+  font-size: 14px;
+  text-align: center;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.toggle-btn:hover {
+  text-decoration: underline;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .auth-wrapper {
+    flex-direction: column;
+    height: auto;
+    max-height: 90vh;
+  }
+  
+  .auth-panel-left {
+    padding: 30px;
+  }
+  
+  .panel-content {
+    padding: 20px;
+  }
+  
+  .panel-title {
+    font-size: 24px;
+  }
+  
+  .panel-features {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .feature {
+    font-size: 12px;
+  }
+  
+  .auth-wrapper.show-register .auth-panel-left {
+    transform: translateY(100%);
+  }
+  
+  .auth-wrapper.show-register .auth-panel-right {
+    transform: translateY(-100%);
+  }
+}
