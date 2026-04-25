@@ -22,12 +22,12 @@ setup_rate_limiting(app)
 # MIDDLEWARE
 # ==============================================
 
-# Доверять прокси (Nginx)
+# Proxy headers (если за Nginx)
 if settings.BEHIND_PROXY:
     from fastapi.middleware.proxy import ProxyHeadersMiddleware
     app.add_middleware(
-        ProxyHeadersMiddleware, 
-        trusted_hosts=["*"]
+        ProxyHeadersMiddleware,
+        trusted_hosts=["*"],
     )
     print("Proxy headers middleware enabled")
 
@@ -46,15 +46,16 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:8000",
         "http://localhost",
+        "http://127.0.0.1:3000",
         "http://127.0.0.1:8000",
         "http://127.0.0.1"
     ],
-    allow_credentials=True,  # Важно для Cookie!
+    allow_credentials=True,        # ОБЯЗАТЕЛЬНО для Cookie
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"]
 )
-
+print("CORS middleware configured (HttpOnly Cookie ready)")
 
 # ==============================================
 # РОУТЕРЫ
@@ -76,7 +77,6 @@ app.include_router(office_views.router)
 app.include_router(audit.router)
 app.include_router(ai_rental_prediction.router)
 
-
 # ==============================================
 # HEALTH CHECK
 # ==============================================
@@ -91,13 +91,13 @@ def root():
         "environment": settings.ENVIRONMENT
     }
 
-
 @app.get("/health")
 def health_check():
     """Health check для мониторинга"""
     return {
         "status": "healthy",
         "service": "business-center-api",
+        "auth": "HttpOnly Cookie",
         "https": settings.cookie_secure,
         "secure_cookies": settings.cookie_secure,
         "behind_proxy": settings.BEHIND_PROXY,

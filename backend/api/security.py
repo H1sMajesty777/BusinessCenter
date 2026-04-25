@@ -256,3 +256,4 @@ async def get_current_user_from_cookie(
         raise HTTPException(status_code=401, detail="Неверный токен")
     
     return payload
+get_current_user = get_current_user_from_cookie

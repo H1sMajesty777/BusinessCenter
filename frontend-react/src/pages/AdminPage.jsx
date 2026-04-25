@@ -6,7 +6,7 @@ import {
   Users, Building2, History, Brain, Plus, Edit2, Trash2, 
   UserPlus, Home, Calendar, AlertCircle, CheckCircle, XCircle,
   BarChart3, Settings, Mail, Phone, User, Lock, Unlock,
-  X, Save, RefreshCw, Eye, EyeOff, FileText, Clock
+  X, Save, RefreshCw, Eye, EyeOff, FileText, Clock, Maximize2, DollarSign
 } from 'lucide-react';
 
 const AdminPage = () => {
@@ -14,26 +14,21 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('users');
   const [loading, setLoading] = useState(false);
   
-  // Данные
   const [users, setUsers] = useState([]);
   const [offices, setOffices] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   
-  // Модальные окна
   const [showUserModal, setShowUserModal] = useState(false);
   const [showOfficeModal, setShowOfficeModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   
-  // Формы
   const [userForm, setUserForm] = useState({ login: '', email: '', password: '', role_id: 3, phone: '', full_name: '' });
   const [officeForm, setOfficeForm] = useState({ office_number: '', floor: '', area_sqm: '', price_per_month: '', description: '', is_free: true });
   
-  // AI
   const [training, setTraining] = useState(false);
-  const [lastTrained, setLastTrained] = useState('2026-04-15');
-  const [metrics, setMetrics] = useState({ accuracy: '92%', auc: '0.89' });
+  const [lastTrained, setLastTrained] = useState('');
+  const [metrics, setMetrics] = useState({ accuracy: '—', auc: '—' });
 
-  // Загрузка данных
   const loadUsers = async () => {
     setLoading(true);
     try {
@@ -41,11 +36,6 @@ const AdminPage = () => {
       setUsers(response.data);
     } catch (error) {
       console.error('Ошибка загрузки пользователей:', error);
-      setUsers([
-        { id: 1, login: 'admin', email: 'admin@test.com', role_id: 1, is_active: true, created_at: '2026-01-01', full_name: 'Админ Админов' },
-        { id: 2, login: 'manager', email: 'manager@test.com', role_id: 2, is_active: true, created_at: '2026-01-02', full_name: 'Менеджер Менеджеров' },
-        { id: 3, login: 'client', email: 'client@test.com', role_id: 3, is_active: true, created_at: '2026-01-03', full_name: 'Клиент Клиентов' },
-      ]);
     } finally {
       setLoading(false);
     }
@@ -58,10 +48,6 @@ const AdminPage = () => {
       setOffices(response.data);
     } catch (error) {
       console.error('Ошибка загрузки офисов:', error);
-      setOffices([
-        { id: 1, office_number: '101', floor: 5, area_sqm: 45.5, price_per_month: 150000, is_free: true, description: 'Современный офис' },
-        { id: 2, office_number: '205', floor: 2, area_sqm: 78.0, price_per_month: 150000, is_free: false, description: 'Переговорная' },
-      ]);
     } finally {
       setLoading(false);
     }
@@ -74,12 +60,21 @@ const AdminPage = () => {
       setAuditLogs(response.data);
     } catch (error) {
       console.error('Ошибка загрузки аудита:', error);
-      setAuditLogs([
-        { id: 1, created_at: '2026-04-18 14:23', user_login: 'admin', action_type: 'CREATE', table_name: 'users', record_id: 4, old_values: null, new_values: '{"login":"newuser"}' },
-        { id: 2, created_at: '2026-04-18 11:05', user_login: 'manager', action_type: 'UPDATE', table_name: 'offices', record_id: 2, old_values: '{"price":150000}', new_values: '{"price":145000}' },
-      ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadModelInfo = async () => {
+    try {
+      const response = await api.get('/ai/rental-prediction/model/info');
+      if (response.data.is_trained) {
+        setLastTrained(new Date().toLocaleDateString('ru-RU'));
+        // Метрики можно получить из другого эндпоинта, пока заглушка
+        setMetrics({ accuracy: '≈85%', auc: '≈0.89' });
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки информации о модели:', error);
     }
   };
 
@@ -87,6 +82,7 @@ const AdminPage = () => {
     if (activeTab === 'users') loadUsers();
     if (activeTab === 'offices') loadOffices();
     if (activeTab === 'audit') loadAuditLogs();
+    if (activeTab === 'ai') loadModelInfo();
   }, [activeTab]);
 
   const handleAddUser = () => {
@@ -108,7 +104,7 @@ const AdminPage = () => {
         loadUsers();
       } catch (error) {
         console.error('Ошибка удаления:', error);
-        alert('Ошибка при удалении');
+        alert(error.response?.data?.detail || 'Ошибка при удалении');
       }
     }
   };
@@ -116,7 +112,16 @@ const AdminPage = () => {
   const handleSaveUser = async () => {
     try {
       if (editingItem) {
-        await api.put(`/users/${editingItem.id}`, userForm);
+        const updateData = {};
+        if (userForm.email !== editingItem.email) updateData.email = userForm.email;
+        if (userForm.phone !== editingItem.phone) updateData.phone = userForm.phone;
+        if (userForm.full_name !== editingItem.full_name) updateData.full_name = userForm.full_name;
+        if (userForm.role_id !== editingItem.role_id) updateData.role_id = userForm.role_id;
+        if (userForm.password) updateData.password = userForm.password;
+        
+        if (Object.keys(updateData).length > 0) {
+          await api.put(`/users/${editingItem.id}`, updateData);
+        }
       } else {
         await api.post('/users', userForm);
       }
@@ -124,7 +129,7 @@ const AdminPage = () => {
       loadUsers();
     } catch (error) {
       console.error('Ошибка сохранения:', error);
-      alert('Ошибка при сохранении');
+      alert(error.response?.data?.detail || 'Ошибка при сохранении');
     }
   };
 
@@ -136,7 +141,7 @@ const AdminPage = () => {
 
   const handleEditOffice = (office) => {
     setEditingItem(office);
-    setOfficeForm(office);
+    setOfficeForm({ ...office, amenities: office.amenities ? JSON.stringify(office.amenities) : '{}' });
     setShowOfficeModal(true);
   };
 
@@ -147,35 +152,57 @@ const AdminPage = () => {
         loadOffices();
       } catch (error) {
         console.error('Ошибка удаления:', error);
-        alert('Ошибка при удалении');
+        alert(error.response?.data?.detail || 'Ошибка при удалении');
       }
     }
   };
 
   const handleSaveOffice = async () => {
     try {
+      const officeData = {
+        office_number: officeForm.office_number,
+        floor: parseInt(officeForm.floor),
+        area_sqm: parseFloat(officeForm.area_sqm),
+        price_per_month: parseFloat(officeForm.price_per_month),
+        description: officeForm.description || null,
+        is_free: officeForm.is_free
+      };
+      
+      if (officeForm.amenities && officeForm.amenities !== '{}') {
+        try {
+          officeData.amenities = JSON.parse(officeForm.amenities);
+        } catch (e) {
+          officeData.amenities = null;
+        }
+      }
+      
       if (editingItem) {
-        await api.put(`/offices/${editingItem.id}`, officeForm);
+        await api.put(`/offices/${editingItem.id}`, officeData);
       } else {
-        await api.post('/offices', officeForm);
+        await api.post('/offices', officeData);
       }
       setShowOfficeModal(false);
       loadOffices();
     } catch (error) {
       console.error('Ошибка сохранения:', error);
-      alert('Ошибка при сохранении');
+      alert(error.response?.data?.detail || 'Ошибка при сохранении');
     }
   };
 
   const handleTrain = async () => {
     setTraining(true);
     try {
-      await api.post('/ai/rental-prediction/train');
-      setLastTrained(new Date().toLocaleDateString('ru-RU'));
-      alert('Модель успешно переобучена!');
+      const response = await api.post('/ai/rental-prediction/train?force=true');
+      if (response.data.success) {
+        setLastTrained(new Date().toLocaleDateString('ru-RU'));
+        alert('Модель успешно переобучена!');
+        loadModelInfo();
+      } else {
+        alert('Ошибка при обучении модели');
+      }
     } catch (error) {
       console.error('Ошибка обучения:', error);
-      alert('Ошибка при обучении модели');
+      alert(error.response?.data?.detail || 'Ошибка при обучении модели');
     } finally {
       setTraining(false);
     }
@@ -203,7 +230,6 @@ const AdminPage = () => {
       </h1>
       <p className="admin-subtitle">Управление пользователями, офисами и системой</p>
 
-      {/* Вкладки */}
       <div className="admin-tabs">
         <button className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>
           <Users size={16} style={{ marginRight: '8px' }} />
@@ -223,7 +249,6 @@ const AdminPage = () => {
         </button>
       </div>
 
-      {/* Вкладка: Пользователи */}
       {activeTab === 'users' && (
         <>
           <button className="add-btn" onClick={handleAddUser}>
@@ -255,10 +280,12 @@ const AdminPage = () => {
                       <td>{u.email}</td>
                       <td>{u.full_name || '-'}</td>
                       <td><span className={`role-badge ${getRoleClass(u.role_id)}`}>{getRoleName(u.role_id)}</span></td>
-                      <td><span className={`status-badge ${u.is_active ? 'status-active' : 'status-inactive'}`}>
+                      <td>
+                        <span className={`status-badge ${u.is_active ? 'status-active' : 'status-inactive'}`}>
                           {u.is_active ? <CheckCircle size={12} style={{ marginRight: '4px' }} /> : <XCircle size={12} style={{ marginRight: '4px' }} />}
                           {u.is_active ? 'Активен' : 'Заблокирован'}
-                        </span></td>
+                        </span>
+                      </td>
                       <td>{u.created_at?.split('T')[0]}</td>
                       <td className="action-btns">
                         <button className="icon-btn edit" onClick={() => handleEditUser(u)}>
@@ -277,7 +304,6 @@ const AdminPage = () => {
         </>
       )}
 
-      {/* Вкладка: Офисы */}
       {activeTab === 'offices' && (
         <>
           <button className="add-btn" onClick={handleAddOffice}>
@@ -308,6 +334,11 @@ const AdminPage = () => {
                       <td>{o.floor}</td>
                       <td>{o.area_sqm} м²</td>
                       <td>{o.price_per_month?.toLocaleString()} ₽</td>
+                      <td>
+                        <span className={`status-badge ${o.is_free ? 'status-active' : 'status-inactive'}`}>
+                          {o.is_free ? 'Свободен' : 'Арендован'}
+                        </span>
+                      </td>
                       <td className="action-btns">
                         <button className="icon-btn edit" onClick={() => handleEditOffice(o)}>
                           <Edit2 size={16} />
@@ -325,7 +356,6 @@ const AdminPage = () => {
         </>
       )}
 
-      {/* Вкладка: Журнал аудита */}
       {activeTab === 'audit' && (
         <div className="table-container">
           {loading ? (
@@ -345,8 +375,8 @@ const AdminPage = () => {
               <tbody>
                 {auditLogs.map(log => (
                   <tr key={log.id}>
-                    <td>{log.created_at}</td>
-                    <td>{log.user_login}</td>
+                    <td>{log.created_at?.replace('T', ' ').slice(0, 19)}</td>
+                    <td>{log.user_login || log.user_id}</td>
                     <td>{log.action_type}</td>
                     <td>{log.table_name}</td>
                     <td>{log.record_id}</td>
@@ -363,7 +393,6 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* Вкладка: AI управление */}
       {activeTab === 'ai' && (
         <div className="ai-section">
           <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -388,7 +417,7 @@ const AdminPage = () => {
             <div className="ai-metric">
               <div className="ai-metric-value">
                 <Calendar size={20} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-                {lastTrained}
+                {lastTrained || 'Не обучена'}
               </div>
               <div className="ai-metric-label">Последнее обучение</div>
             </div>
@@ -403,7 +432,6 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* Модальное окно: Пользователь */}
       {showUserModal && (
         <div className="modal-overlay" onClick={() => setShowUserModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -418,7 +446,7 @@ const AdminPage = () => {
             </div>
             <div className="modal-field">
               <label><User size={14} style={{ marginRight: '4px' }} /> Логин *</label>
-              <input value={userForm.login} onChange={(e) => setUserForm({ ...userForm, login: e.target.value })} />
+              <input value={userForm.login} onChange={(e) => setUserForm({ ...userForm, login: e.target.value })} disabled={!!editingItem} />
             </div>
             <div className="modal-field">
               <label><Mail size={14} style={{ marginRight: '4px' }} /> Email *</label>
@@ -460,7 +488,6 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* Модальное окно: Офис */}
       {showOfficeModal && (
         <div className="modal-overlay" onClick={() => setShowOfficeModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>

@@ -27,12 +27,7 @@ const ClientDashboard = () => {
   });
 
   useEffect(() => {
-    if (activeTab === 'applications') {
-      loadApplications();
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
+    loadApplications();
     loadContracts();
     loadPayments();
   }, []);
@@ -40,13 +35,11 @@ const ClientDashboard = () => {
   const loadApplications = async () => {
     setLoading(prev => ({ ...prev, applications: true }));
     try {
-      const response = await api.get('/applications?user_id=' + user?.id);
+      const response = await api.get('/applications/my');
       setApplications(response.data || []);
     } catch (error) {
-      setApplications([
-        { id: 1, office_number: '101', status_name: 'Новая', desired_date: '2026-04-25', created_at: '2026-04-18' },
-        { id: 2, office_number: '205', status_name: 'Одобрена', desired_date: '2026-04-20', created_at: '2026-04-15' }
-      ]);
+      console.error('Ошибка загрузки заявок:', error);
+      setApplications([]);
     } finally {
       setLoading(prev => ({ ...prev, applications: false }));
     }
@@ -58,9 +51,8 @@ const ClientDashboard = () => {
       const response = await api.get('/contracts/my');
       setContracts(response.data || []);
     } catch (error) {
-      setContracts([
-        { id: 1, office_number: '101', start_date: '2026-01-01', end_date: '2026-12-31', total_amount: 540000, status_name: 'Действует' }
-      ]);
+      console.error('Ошибка загрузки договоров:', error);
+      setContracts([]);
     } finally {
       setLoading(prev => ({ ...prev, contracts: false }));
     }
@@ -72,11 +64,8 @@ const ClientDashboard = () => {
       const response = await api.get('/payments/my');
       setPayments(response.data || []);
     } catch (error) {
-      setPayments([
-        { id: 1, office_number: '101', amount: 45000, payment_date: '2026-01-05', status_name: 'Оплачено' },
-        { id: 2, office_number: '101', amount: 45000, payment_date: '2026-02-05', status_name: 'Оплачено' },
-        { id: 3, office_number: '101', amount: 45000, payment_date: '2026-03-05', status_name: 'Просрочено' }
-      ]);
+      console.error('Ошибка загрузки платежей:', error);
+      setPayments([]);
     } finally {
       setLoading(prev => ({ ...prev, payments: false }));
     }
@@ -92,25 +81,39 @@ const ClientDashboard = () => {
   };
 
   const getStatusIcon = (statusName) => {
-    switch (statusName) {
-      case 'Новая': return <Clock size={14} style={{ marginRight: '4px' }} />;
-      case 'Одобрена': return <CheckCircle size={14} style={{ marginRight: '4px' }} />;
-      case 'Отказана': return <XCircle size={14} style={{ marginRight: '4px' }} />;
-      case 'Действует': return <FileCheck size={14} style={{ marginRight: '4px' }} />;
-      case 'Истек': return <AlertCircle size={14} style={{ marginRight: '4px' }} />;
-      case 'Оплачено': return <CheckCircle size={14} style={{ marginRight: '4px' }} />;
-      case 'Просрочено': return <AlertCircle size={14} style={{ marginRight: '4px' }} />;
-      default: return null;
-    }
+    const name = statusName?.toLowerCase() || '';
+    if (name === 'новая' || name === 'new') return <Clock size={14} style={{ marginRight: '4px' }} />;
+    if (name === 'одобрена' || name === 'approved') return <CheckCircle size={14} style={{ marginRight: '4px' }} />;
+    if (name === 'отказана' || name === 'rejected') return <XCircle size={14} style={{ marginRight: '4px' }} />;
+    if (name === 'действует' || name === 'active') return <FileCheck size={14} style={{ marginRight: '4px' }} />;
+    if (name === 'истек' || name === 'expired') return <AlertCircle size={14} style={{ marginRight: '4px' }} />;
+    if (name === 'оплачено' || name === 'paid') return <CheckCircle size={14} style={{ marginRight: '4px' }} />;
+    if (name === 'просрочено' || name === 'overdue') return <AlertCircle size={14} style={{ marginRight: '4px' }} />;
+    return null;
   };
 
   const getStatusClass = (statusName) => {
+    const name = statusName?.toLowerCase() || '';
     const map = {
-      'Новая': 'status-new', 'Одобрена': 'status-approved', 'Отказана': 'status-rejected',
-      'Действует': 'status-active', 'Истек': 'status-expired',
-      'Оплачено': 'status-paid', 'Просрочено': 'status-overdue'
+      'новая': 'status-new', 'new': 'status-new',
+      'одобрена': 'status-approved', 'approved': 'status-approved',
+      'отказана': 'status-rejected', 'rejected': 'status-rejected',
+      'действует': 'status-active', 'active': 'status-active',
+      'истек': 'status-expired', 'expired': 'status-expired',
+      'оплачено': 'status-paid', 'paid': 'status-paid',
+      'просрочено': 'status-overdue', 'overdue': 'status-overdue'
     };
-    return map[statusName] || 'status-new';
+    return map[name] || 'status-new';
+  };
+
+  const getStatusText = (statusName) => {
+    const name = statusName?.toLowerCase() || '';
+    const map = {
+      'new': 'Новая', 'approved': 'Одобрена', 'rejected': 'Отказана',
+      'active': 'Действует', 'expired': 'Истек',
+      'paid': 'Оплачено', 'overdue': 'Просрочено'
+    };
+    return map[name] || statusName || '—';
   };
 
   const userName = user?.full_name || user?.login || 'Клиент';
@@ -150,7 +153,7 @@ const ClientDashboard = () => {
                     {office.floor} этаж
                   </span>
                 </div>
-                <div className="office-details">
+                <div className="office-details-small">
                   <div className="detail-item">
                     <Ruler size={16} />
                     <div className="detail-label">Площадь</div>
@@ -162,13 +165,13 @@ const ClientDashboard = () => {
                     <div className="detail-value">{office.price_per_month.toLocaleString()} ₽</div>
                   </div>
                 </div>
-                <div className="office-actions">
-                  <button className="btn-details">
+                <div className="office-actions-small">
+                  <button className="btn-details-small" onClick={() => handleOfficeClick(office.id)}>
                     <Eye size={16} style={{ marginRight: '6px' }} />
                     Подробнее
                   </button>
                   <button 
-                    className="btn-remove"
+                    className="btn-remove-small"
                     onClick={(e) => handleRemoveFromFavorites(office, e)}
                   >
                     <Trash2 size={16} style={{ marginRight: '6px' }} />
@@ -217,14 +220,23 @@ const ClientDashboard = () => {
           loading.applications ? <div className="loading-state">Загрузка...</div> :
           applications.length === 0 ? <div className="empty-state"><FileText size={48} /><div>Нет заявок</div></div> :
           <table className="data-table">
-            <thead><tr><th>Офис</th><th>Дата создания</th><th>Желаемая дата</th><th>Статус</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Офис</th>
+                <th>Дата создания</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
             <tbody>
               {applications.map(app => (
                 <tr key={app.id}>
-                  <td><strong>Офис {app.office_number}</strong></td>
-                  <td>{app.created_at}</td>
-                  <td>{app.desired_date}</td>
-                  <td><span className={`status-badge ${getStatusClass(app.status_name)}`}>{getStatusIcon(app.status_name)}{app.status_name}</span></td>
+                  <td><strong>Офис {app.office_number || app.office_id}</strong></td>
+                  <td>{app.created_at?.split('T')[0]}</td>
+                  <td>
+                    <span className={`status-badge ${getStatusClass(app.status_name)}`}>
+                      {getStatusIcon(app.status_name)}{getStatusText(app.status_name)}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -235,15 +247,27 @@ const ClientDashboard = () => {
           loading.contracts ? <div className="loading-state">Загрузка...</div> :
           contracts.length === 0 ? <div className="empty-state"><FileCheck size={48} /><div>Нет договоров</div></div> :
           <table className="data-table">
-            <thead><tr><th>Офис</th><th>Дата начала</th><th>Дата окончания</th><th>Сумма</th><th>Статус</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Офис</th>
+                <th>Дата начала</th>
+                <th>Дата окончания</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
             <tbody>
               {contracts.map(c => (
                 <tr key={c.id}>
-                  <td><strong>Офис {c.office_number}</strong></td>
+                  <td><strong>Офис {c.office_number || c.office_id}</strong></td>
                   <td>{c.start_date}</td>
                   <td>{c.end_date}</td>
                   <td>{c.total_amount?.toLocaleString()} ₽</td>
-                  <td><span className={`status-badge ${getStatusClass(c.status_name)}`}>{getStatusIcon(c.status_name)}{c.status_name}</span></td>
+                  <td>
+                    <span className={`status-badge ${getStatusClass(c.status_name)}`}>
+                      {getStatusIcon(c.status_name)}{getStatusText(c.status_name)}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -254,14 +278,25 @@ const ClientDashboard = () => {
           loading.payments ? <div className="loading-state">Загрузка...</div> :
           payments.length === 0 ? <div className="empty-state"><CreditCard size={48} /><div>Нет платежей</div></div> :
           <table className="data-table">
-            <thead><tr><th>Офис</th><th>Сумма</th><th>Дата платежа</th><th>Статус</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Офис</th>
+                <th>Сумма</th>
+                <th>Дата платежа</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
             <tbody>
               {payments.map(p => (
                 <tr key={p.id}>
-                  <td><strong>Офис {p.office_number}</strong></td>
+                  <td><strong>Офис {p.office_number || p.contract_id}</strong></td>
                   <td>{p.amount?.toLocaleString()} ₽</td>
                   <td>{p.payment_date}</td>
-                  <td><span className={`status-badge ${getStatusClass(p.status_name)}`}>{getStatusIcon(p.status_name)}{p.status_name}</span></td>
+                  <td>
+                    <span className={`status-badge ${getStatusClass(p.status_name)}`}>
+                      {getStatusIcon(p.status_name)}{getStatusText(p.status_name)}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
