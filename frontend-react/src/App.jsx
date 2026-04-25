@@ -10,7 +10,7 @@ import OfficeDetailPage from './pages/OfficeDetailPage';
 import ForecastPage from './pages/ForecastPage';
 import AdminPage from './pages/AdminPage';
 import ClientDashboard from './pages/ClientDashboard';
-import FavoritesPage from './pages/FavoritesPage';
+
 
 // Компонент для защиты маршрутов (требуется авторизация)
 const PrivateRoute = ({ children }) => {
@@ -69,9 +69,6 @@ function App() {
               <PrivateRoute><OfficeDetailPage /></PrivateRoute>
             } />
             
-            <Route path="/favorites" element={
-              <PrivateRoute><FavoritesPage /></PrivateRoute>
-            } />
             
             <Route path="/client-dashboard" element={
               <PrivateRoute><ClientDashboard /></PrivateRoute>

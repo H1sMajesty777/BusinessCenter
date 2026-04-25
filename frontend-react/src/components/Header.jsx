@@ -15,13 +15,13 @@ const Header = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 910);
 
   // Проверка ширины экрана
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth > 768) {
+      setIsMobile(window.innerWidth <= 910);
+      if (window.innerWidth > 910) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -79,10 +79,6 @@ const Header = () => {
             <User size={18} style={{ marginRight: '6px' }} />
             Личный кабинет
           </Link>
-          <Link to="/favorites" className="header-nav-link" onClick={closeMobileMenu}>
-            <Heart size={18} style={{ marginRight: '6px' }} />
-            Избранное
-          </Link>
         </>
       )}
 
@@ -125,11 +121,6 @@ const Header = () => {
               <Link to="/client-dashboard" className="mobile-nav-link" onClick={closeMobileMenu}>
                 <User size={20} />
                 <span>Личный кабинет</span>
-                <ChevronRight size={16} className="mobile-arrow" />
-              </Link>
-              <Link to="/favorites" className="mobile-nav-link" onClick={closeMobileMenu}>
-                <Heart size={20} />
-                <span>Избранное</span>
                 <ChevronRight size={16} className="mobile-arrow" />
               </Link>
             </>

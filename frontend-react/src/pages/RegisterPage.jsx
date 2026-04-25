@@ -116,29 +116,7 @@ const RegisterPage = () => {
             {errors.email && <p className="register-field-error">{errors.email}</p>}
           </div>
           
-          <div className="register-field">
-            <label className="register-label">Телефон</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="register-input"
-              placeholder="+7 (999) 123-45-67"
-            />
-          </div>
           
-          <div className="register-field">
-            <label className="register-label">ФИО</label>
-            <input
-              type="text"
-              name="full_name"
-              value={formData.full_name}
-              onChange={handleChange}
-              className="register-input"
-              placeholder="Иванов Иван Иванович"
-            />
-          </div>
           
           <div className="register-field">
             <label className="register-label">Пароль *</label>

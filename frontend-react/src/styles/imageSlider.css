@@ -5,6 +5,7 @@
   background: #f0f0f0;
   border-radius: 16px;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .slider-container {
@@ -146,17 +147,25 @@
   backdrop-filter: blur(4px);
 }
 
-/* Размеры */
+/* ===== РАЗМЕРЫ СЛАЙДЕРОВ ===== */
 .image-slider.large {
   height: 320px;
+  max-width: 500px;
+   aspect-ratio: 4 / 3; 
 }
 
 .image-slider.medium {
-  height: 200px;
+  width: 100%;
+  max-width: 350px;
+  height: auto;
+  aspect-ratio: 4 / 3;
+
 }
 
 .image-slider.small {
   height: 140px;
+  max-width: 250px;
+  aspect-ratio: 1 / 1;
 }
 
 /* Адаптивность */
@@ -166,7 +175,11 @@
   }
   
   .image-slider.medium {
-    height: 160px;
+    max-width: 400px;
+  }
+  
+  .image-slider.small {
+    max-width: 140px;
   }
   
   .slider-arrow {

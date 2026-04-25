@@ -5,6 +5,11 @@
   padding: 20px;
 }
 
+.office-card .image-slider {
+  max-width: 350px;
+  margin: 0 auto;
+}
+
 .dashboard-title {
   margin-bottom: 30px;
   text-align: center;

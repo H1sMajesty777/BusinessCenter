@@ -132,7 +132,7 @@ const ClientDashboard = () => {
         {favorites.map(office => {
           const images = getOfficeImages(office.id);
           return (
-            <div 
+            <div  
               key={office.id} 
               className="favorite-card"
               onClick={() => handleOfficeClick(office.id)}
@@ -140,7 +140,7 @@ const ClientDashboard = () => {
               <ImageSlider 
                 images={images} 
                 officeNumber={office.office_number}
-                className="medium"
+                className="favorite"
               />
               <div className="office-content">
                 <div className="office-header">
