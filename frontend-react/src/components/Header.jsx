@@ -1,6 +1,6 @@
 // frontend/src/components/Header.jsx
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Building2, BarChart3, User, Settings, LogOut, LogIn, Heart,
@@ -10,6 +10,7 @@ import '../styles/header.css';
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const isAuthenticated = !!user;
   const roleId = user?.role_id;
@@ -17,6 +18,21 @@ const Header = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 910);
+  
+  // Скрываем хедер на странице авторизации
+  const isAuthPage = location.pathname === '/auth' || location.pathname === '/login' || location.pathname === '/register';
+  
+  if (isAuthPage) {
+    return null; // Ничего не рендерим на странице авторизации
+  }
+
+  // Управление отступом body
+  useEffect(() => {
+    document.body.style.paddingTop = '70px';
+    return () => {
+      document.body.style.paddingTop = '0';
+    };
+  }, []);
 
   // Проверка ширины экрана
   useEffect(() => {
@@ -47,7 +63,7 @@ const Header = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/auth');
     setIsMobileMenuOpen(false);
   };
 
@@ -179,7 +195,7 @@ const Header = () => {
                 </button>
               </div>
             ) : (
-              <Link to="/login" className="header-login-btn">
+              <Link to="/auth" className="header-login-btn">
                 <LogIn size={16} style={{ marginRight: '6px' }} />
                 Войти
               </Link>
@@ -190,7 +206,7 @@ const Header = () => {
           {isMobile && (
             <div className="mobile-buttons">
               {!isAuthenticated ? (
-                <Link to="/login" className="mobile-login-btn" onClick={closeMobileMenu}>
+                <Link to="/auth" className="mobile-login-btn" onClick={closeMobileMenu}>
                   <LogIn size={20} />
                 </Link>
               ) : (

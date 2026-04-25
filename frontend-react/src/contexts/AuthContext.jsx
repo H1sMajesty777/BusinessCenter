@@ -10,40 +10,70 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Загрузка пользователя при старте
+  // Загрузка пользователя из localStorage при запуске
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        // Пробуем загрузить пользователя через куку
-        const response = await api.get('/auth/me');
-        setUser(response.data);
-      } catch (error) {
-        // Если нет куки или она истекла — пользователь не авторизован
-        console.log('Пользователь не авторизован');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Проверяем, находимся ли мы на странице авторизации
+    const isAuthPage = window.location.pathname === '/auth' || 
+                       window.location.pathname === '/login' || 
+                       window.location.pathname === '/register';
     
-    loadUser();
+    // Если на странице авторизации — не загружаем пользователя
+    if (isAuthPage) {
+      setLoading(false);
+      return;
+    }
+    
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    const accessToken = localStorage.getItem('access_token');
+    
+    if (storedUser && (token || accessToken)) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        
+        // Устанавливаем токен для API запросов
+        if (token) {
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        } else if (accessToken) {
+          api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        }
+      } catch (e) {
+        console.error('Ошибка загрузки пользователя:', e);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('access_token');
+        setUser(null);
+      }
+    } else {
+      // Очищаем всё, если нет данных
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('access_token');
+      delete api.defaults.headers.common['Authorization'];
+      setUser(null);
+    }
+    
+    setLoading(false);
   }, []);
 
-  const login = (userData) => {
+  const login = (userData, token = null) => {
     setUser(userData);
-    // Сохраняем в localStorage только для удобства (не для безопасности!)
     localStorage.setItem('user', JSON.stringify(userData));
+    
+    if (token) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('access_token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
   };
 
-  const logout = async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch (error) {
-      console.error('Ошибка при выходе:', error);
-    }
+  const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
-    // Куки будут удалены бэкендом
+    localStorage.removeItem('token');
+    localStorage.removeItem('access_token');
+    delete api.defaults.headers.common['Authorization'];
   };
 
   const updateUser = (userData) => {
