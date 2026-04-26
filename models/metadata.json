@@ -1,8 +1,8 @@
 {
-  "version": "20260414_110734",
-  "trained_at": "2026-04-14T11:07:34.689678",
-  "samples_count": 100,
-  "real_samples": 100,
+  "version": "20260426_104600",
+  "trained_at": "2026-04-26T10:46:00.373237",
+  "samples_count": 120,
+  "real_samples": 120,
   "synthetic_samples": 0,
   "feature_names": [
     "floor",
@@ -36,8 +36,8 @@
   "feature_count": 27,
   "metrics": {
     "roc_auc": 1.0,
-    "average_precision": 1.0,
-    "brier_score": 0.0002609751910915895,
+    "average_precision": 1.0000000000000002,
+    "brier_score": 0.0005688109322756704,
     "accuracy": 1.0,
     "cv_auc_mean": 1.0,
     "cv_auc_std": 0.0
@@ -45,44 +45,44 @@
   "feature_importance": [
     {
       "feature_index": 19,
-      "importance": 21.241264430950114
-    },
-    {
-      "feature_index": 20,
-      "importance": 3.5617616709428788
-    },
-    {
-      "feature_index": 0,
-      "importance": 2.2505292293271637
-    },
-    {
-      "feature_index": 2,
-      "importance": 1.5027425630544693
+      "importance": 21.441110843240864
     },
     {
       "feature_index": 1,
-      "importance": 1.0021683700813113
+      "importance": 9.001170684146357
     },
     {
-      "feature_index": 21,
-      "importance": 0.9135606426716856
+      "feature_index": 8,
+      "importance": 8.250564939786043
     },
     {
-      "feature_index": 3,
-      "importance": 0.7510417522571979
+      "feature_index": 20,
+      "importance": 3.120104213276006
     },
     {
-      "feature_index": 6,
-      "importance": 0.25208575873162464
+      "feature_index": 15,
+      "importance": 2.750509020838958
     },
     {
-      "feature_index": 9,
-      "importance": 0.25064764646836285
+      "feature_index": 13,
+      "importance": 2.001103784086634
     },
     {
-      "feature_index": 4,
-      "importance": 0.005015396640803665
+      "feature_index": 2,
+      "importance": 1.7510177836931267
+    },
+    {
+      "feature_index": 14,
+      "importance": 1.2541262940844442
+    },
+    {
+      "feature_index": 26,
+      "importance": 1.2534782832187208
+    },
+    {
+      "feature_index": 0,
+      "importance": 1.2501764358226324
     }
   ],
-  "data_hash": "7b4992379d5694db183dfc6615fdce22"
+  "data_hash": "1b0d4371fa40ef4a6f36f097eba8b74e"
 }

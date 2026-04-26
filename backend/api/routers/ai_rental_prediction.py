@@ -8,7 +8,7 @@
 
 import numpy as np
 from fastapi import APIRouter, HTTPException, Depends, Query, Body, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from api.database import get_db
@@ -16,27 +16,28 @@ from api.security import decode_token
 from api.ml_models.office_rental_prediction import rental_predictor
 from api.ml_models import production_predictor
 from api.rate_limiter import limiter, RATE_LIMITS
+from api.security import get_current_user_from_cookie as get_current_user
 
 router = APIRouter(prefix="/api/ai/rental-prediction", tags=["AI Rental Prediction"])
-security = HTTPBearer(auto_error=False)
+# security = HTTPBearer(auto_error=False)
 
 
 # ===================================================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 # ===================================================================
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Получить текущего пользователя из токена"""
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Нет токена")
+# def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+#     """Получить текущего пользователя из токена"""
+#     if not credentials:
+#         raise HTTPException(status_code=401, detail="Нет токена")
     
-    token = credentials.credentials
-    payload = decode_token(token)
+#     token = credentials.credentials
+#     payload = decode_token(token)
     
-    if not payload:
-        raise HTTPException(status_code=401, detail="Неверный токен")
+#     if not payload:
+#         raise HTTPException(status_code=401, detail="Неверный токен")
     
-    return payload
+#     return payload
 
 
 def require_admin_or_manager(current_user: dict):

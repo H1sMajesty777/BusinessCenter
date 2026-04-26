@@ -1,6 +1,6 @@
 # backend/api/routers/auth.py
 from fastapi import APIRouter, HTTPException, Depends, Body, Request, Response
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 from datetime import datetime
 from api.database import get_db, get_redis
@@ -13,39 +13,40 @@ from api.security import (
 )
 from api.models.user import LoginRequest, Token, UserResponse, TokenRefresh
 from api.rate_limiter import limiter, RATE_LIMITS
+from api.security import get_current_user_from_cookie as get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
-security = HTTPBearer(auto_error=False)
+# security = HTTPBearer(auto_error=False)
 
 
-async def get_current_user(
-    request: Request,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-):
-    """
-    Получить текущего пользователя из Cookie или Bearer токена
-    """
-    token = None
+# async def get_current_user(
+#     request: Request,
+#     credentials: HTTPAuthorizationCredentials = Depends(security)
+# ):
+#     """
+#     Получить текущего пользователя из Cookie или Bearer токена
+#     """
+#     token = None
     
-    # Сначала пробуем взять из Cookie
-    token = get_token_from_cookie(request, "access")
+#     # Сначала пробуем взять из Cookie
+#     token = get_token_from_cookie(request, "access")
     
-    # Если нет - пробуем из Bearer header
-    if not token and credentials:
-        token = credentials.credentials
+#     # Если нет - пробуем из Bearer header
+#     if not token and credentials:
+#         token = credentials.credentials
     
-    if not token:
-        raise HTTPException(status_code=401, detail="Нет токена")
+#     if not token:
+#         raise HTTPException(status_code=401, detail="Нет токена")
     
-    # Проверка blacklist
-    if is_token_blacklisted(token):
-        raise HTTPException(status_code=401, detail="Токен отозван")
+#     # Проверка blacklist
+#     if is_token_blacklisted(token):
+#         raise HTTPException(status_code=401, detail="Токен отозван")
     
-    payload = decode_token(token, expected_type="access")
-    if not payload:
-        raise HTTPException(status_code=401, detail="Неверный токен")
+#     payload = decode_token(token, expected_type="access")
+#     if not payload:
+#         raise HTTPException(status_code=401, detail="Неверный токен")
     
-    return payload
+#     return payload
 
 
 def require_admin(current_user: dict):

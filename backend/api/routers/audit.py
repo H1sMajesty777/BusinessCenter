@@ -1,31 +1,32 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional, Dict, Any
 from api.database import get_db
 from api.security import decode_token
 from api.models.audit import AuditLogCreate, AuditLogResponse
 from api.rate_limiter import limiter, RATE_LIMITS
+from api.security import get_current_user_from_cookie as get_current_user
 
 
 router = APIRouter(prefix="/api/audit", tags=["Audit"])
-security = HTTPBearer(auto_error=False)
+# security = HTTPBearer(auto_error=False)
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """
-    Получить текущего пользователя из JWT токена
+# def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+#     """
+#     Получить текущего пользователя из JWT токена
     
-    """
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Нет токена")
+#     """
+#     if not credentials:
+#         raise HTTPException(status_code=401, detail="Нет токена")
     
-    token = credentials.credentials
-    payload = decode_token(token)
+#     token = credentials.credentials
+#     payload = decode_token(token)
     
-    if not payload:
-        raise HTTPException(status_code=401, detail="Неверный токен")
+#     if not payload:
+#         raise HTTPException(status_code=401, detail="Неверный токен")
     
-    return payload
+#     return payload
 
 
 def require_admin(current_user: dict):
