@@ -8,3 +8,4 @@ from . import payments
 from . import office_views
 from . import audit
 from . import ai_rental_prediction
+from . import favorites

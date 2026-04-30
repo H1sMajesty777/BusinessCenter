@@ -12,7 +12,7 @@ import '../styles/imageSlider.css';
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite: isFav, toggleFavorite } = useFavorites();
   const [offices, setOffices] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -156,7 +156,7 @@ const DashboardPage = () => {
         <div className="offices-grid">
           {offices.map(office => {
             const images = getOfficeImages(office.id);
-            const isFav = isFavorite(office.id);
+            const isFavoriteFlag = isFav(office.id);
             
             return (
               <div 
@@ -208,11 +208,11 @@ const DashboardPage = () => {
                       Подробнее
                     </button>
                     <button 
-                      className={`favorite-btn ${isFav ? 'active' : ''}`}
+                      className={`favorite-btn ${isFavoriteFlag ? 'active' : ''}`}
                       onClick={(e) => handleFavoriteClick(office, e)}
                     >
-                      <Heart size={16} style={{ marginRight: '6px' }} />
-                      {isFav ? 'В избранном' : 'В избранное'}
+                      <Heart size={16} />
+                      {isFavoriteFlag ? 'В избранном' : 'В избранное'}
                     </button>
                   </div>
                 </div>

@@ -13,7 +13,8 @@ from api.security import (
 )
 from api.models.user import LoginRequest, Token, UserResponse, TokenRefresh
 from api.rate_limiter import limiter, RATE_LIMITS
-from api.security import get_current_user_from_cookie as get_current_user
+# from api.security import get_current_user_from_cookie as get_current_user
+from api.security import get_current_user 
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 # security = HTTPBearer(auto_error=False)
@@ -74,30 +75,26 @@ def login(
 ):
     """
     Вход в систему с выдачей access + refresh токенов в HttpOnly Cookie
-    
-    Доступ: Все (публичный endpoint)
-    
-    Returns:
-        Токены устанавливаются в Cookie, в теле возвращается информация о пользователе
+    Поддерживает вход как по логину, так и по email
     """
     conn = get_db()
     cursor = conn.cursor()
     
     try:
-        # Поиск пользователя по логину
+        # 🔥 ИЩЕМ ПО LOGIN ИЛИ EMAIL
         cursor.execute(
-            """SELECT id, login, password_hash, role_id, is_active 
-               FROM users WHERE login = %s""",
-            (login_request.login,)
+            """SELECT id, login, email, password_hash, role_id, is_active 
+               FROM users WHERE login = %s OR email = %s""",
+            (login_request.login, login_request.login)
         )
         user = cursor.fetchone()
         
         # Проверка существования
         if not user:
-            raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+            raise HTTPException(status_code=401, detail="Неверный логин/email или пароль")
         
         user_id = user['id']
-        user_login = user['login']
+        user_login = user['login']  # возвращаем именно login, не email
         password_hash = user['password_hash']
         role_id = user['role_id']
         is_active = user['is_active']
@@ -108,7 +105,7 @@ def login(
         
         # Проверка пароля
         if not verify_password(login_request.password, password_hash):
-            raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+            raise HTTPException(status_code=401, detail="Неверный логин/email или пароль")
         
         # Проверка активности
         if not is_active:
@@ -129,12 +126,13 @@ def login(
         # Сохраняем refresh токен в Redis
         store_refresh_token(str(user_id), refresh_token)
         
-        # Возвращаем только информацию о пользователе, без токенов в теле!
+        # Возвращаем информацию о пользователе
         return {
             "message": "Успешный вход",
             "user": {
                 "id": user_id,
                 "login": user_login,
+                "email": user['email'],
                 "role_id": role_id
             }
         }
@@ -203,14 +201,12 @@ def refresh_token(
         conn.close()
 
 
+# backend/api/routers/auth.py
+
 @router.get("/me", response_model=UserResponse)
 @limiter.limit(RATE_LIMITS["authenticated"])
 async def get_me(request: Request, current_user: dict = Depends(get_current_user)):
-    """
-    Просмотр своего профиля
-    
-    Доступ: Все авторизованные с валидным access токеном
-    """
+    """Проверка текущего пользователя — работает с HttpOnly Cookie"""
     conn = get_db()
     cursor = conn.cursor()
     
@@ -235,7 +231,6 @@ async def get_me(request: Request, current_user: dict = Depends(get_current_user
             is_active=user['is_active'],
             created_at=user['created_at']
         )
-    
     finally:
         cursor.close()
         conn.close()

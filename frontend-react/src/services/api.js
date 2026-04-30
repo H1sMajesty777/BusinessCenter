@@ -1,4 +1,5 @@
 // frontend/src/services/api.js
+
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
@@ -6,7 +7,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
-  withCredentials: true,  // ОБЯЗАТЕЛЬНО для отправки HttpOnly Cookie
+  withCredentials: true,  // ← критично для отправки Cookie
 });
 
 // Переменная для предотвращения множественных refresh запросов
@@ -24,7 +25,7 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-// Перехватчик ответов — автоматический refresh токена
+// Интерцептор для ответов — автоматический refresh токена
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -33,7 +34,6 @@ api.interceptors.response.use(
     // Если ошибка 401 и это не запрос на refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // Если уже идет refresh, ждем
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         }).then(() => {
@@ -51,13 +51,11 @@ api.interceptors.response.use(
         await api.post('/auth/refresh');
         
         processQueue(null);
-        // Повторяем оригинальный запрос — новая access кука уже установлена
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        // Очищаем состояние и редиректим на логин
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+        // Редирект на страницу авторизации
+        window.location.href = '/auth';
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -67,8 +65,5 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// ПРИМЕЧАНИЕ: Интерцептор для заголовка Authorization НЕ НУЖЕН!
-// Куки отправляются автоматически благодаря withCredentials: true
 
 export default api;

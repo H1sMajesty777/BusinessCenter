@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends, Body, Request
-# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from datetime import date, datetime
 from api.database import get_db
 from api.security import decode_token
 from api.models.contract import ContractCreate, ContractResponse
 from api.rate_limiter import limiter, RATE_LIMITS
-from api.security import get_current_user_from_cookie as get_current_user
+# from api.security import get_current_user_from_cookie as get_current_user
+from api.security import get_current_user 
 
 
 router = APIRouter(prefix="/api/contracts", tags=["Contracts"])

@@ -5,14 +5,15 @@
 """
 
 from fastapi import APIRouter, HTTPException, Depends, Body, Query, Request
-# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from datetime import datetime
 from api.database import get_db
 from api.security import decode_token
 from api.models.office_view import OfficeViewCreate, OfficeViewResponse
 from api.rate_limiter import limiter, RATE_LIMITS
-from api.security import get_current_user_from_cookie as get_current_user
+# from api.security import get_current_user_from_cookie as get_current_user
+from api.security import get_current_user 
 
 
 router = APIRouter(prefix="/api/office-views", tags=["OfficeViews"])

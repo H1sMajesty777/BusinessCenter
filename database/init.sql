@@ -133,6 +133,15 @@ CREATE TABLE IF NOT EXISTS audit_log (
     new_values JSONB,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+-- Таблица избранных офисов пользователей
+CREATE TABLE IF NOT EXISTS favorites (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    office_id INTEGER NOT NULL REFERENCES offices(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, office_id)
+);
+
 -- ============================================================
 -- ИНДЕКСЫ ДЛЯ ОПТИМИЗАЦИИ ЗАПРОСОВ
 -- ============================================================
@@ -188,3 +197,5 @@ CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active) WHERE is_active 
 -- 8. Частичные индексы для частых запросов
 CREATE INDEX IF NOT EXISTS idx_offices_free_only ON offices(id, office_number, floor, price_per_month) WHERE is_free = TRUE;
 CREATE INDEX IF NOT EXISTS idx_contracts_active_only ON contracts(office_id, user_id, end_date) WHERE status_id = 4;
+CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_favorites_office_id ON favorites(office_id);

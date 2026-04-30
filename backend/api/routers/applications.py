@@ -6,7 +6,8 @@ from api.database import get_db
 from api.security import decode_token
 from api.models.application import ApplicationCreate, ApplicationUpdate, ApplicationResponse
 from api.rate_limiter import limiter, RATE_LIMITS
-from api.security import get_current_user_from_cookie as get_current_user
+# from api.security import get_current_user_from_cookie as get_current_user
+from api.security import get_current_user 
 
 
 router = APIRouter(prefix="/api/applications", tags=["Applications"])

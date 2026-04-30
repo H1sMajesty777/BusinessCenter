@@ -16,7 +16,8 @@ from api.security import decode_token
 from api.ml_models.office_rental_prediction import rental_predictor
 from api.ml_models import production_predictor
 from api.rate_limiter import limiter, RATE_LIMITS
-from api.security import get_current_user_from_cookie as get_current_user
+# from api.security import get_current_user_from_cookie as get_current_user
+from api.security import get_current_user 
 
 router = APIRouter(prefix="/api/ai/rental-prediction", tags=["AI Rental Prediction"])
 # security = HTTPBearer(auto_error=False)

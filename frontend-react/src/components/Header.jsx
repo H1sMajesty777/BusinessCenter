@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Building2, BarChart3, User, Settings, LogOut, LogIn, Heart,
-  Menu, X, ChevronRight
+  Menu, X, ChevronRight, FileText 
 } from 'lucide-react';
 import '../styles/header.css';
 
@@ -103,6 +103,13 @@ const Header = () => {
         <Link to="/admin" className="header-nav-link" onClick={closeMobileMenu}>
           <Settings size={18} style={{ marginRight: '6px' }} />
           Админ
+        </Link>
+      )}
+
+      {roleId === 2 && (
+        <Link to="/manager" className="header-nav-link">
+          <FileText size={18} style={{ marginRight: '6px' }} />
+          Управление
         </Link>
       )}
     </nav>

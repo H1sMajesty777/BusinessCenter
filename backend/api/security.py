@@ -8,8 +8,8 @@ HttpOnly Cookie для защиты от XSS
 
 from datetime import datetime, timedelta
 from typing import Optional
-from fastapi import Response, Request, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials
+from fastapi import Response, Request, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from api.config import settings
@@ -18,6 +18,9 @@ from api.database import get_redis
 
 # Настройка bcrypt для хеширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Схема безопасности для Swagger
+security_scheme = HTTPBearer(auto_error=False)
 
 
 # ===================================================================
@@ -90,13 +93,7 @@ def create_refresh_token(data: dict, expire_days: int = None) -> str:
 def set_token_cookie(response: Response, access_token: str, refresh_token: str = None):
     """
     Установка HttpOnly Cookie с токенами
-    
-    Безопасность:
-    - HttpOnly: недоступен для JavaScript (защита от XSS)
-    - Secure: только по HTTPS (включается в production)
-    - SameSite: Lax (защита от CSRF)
     """
-    # Access token
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -107,7 +104,6 @@ def set_token_cookie(response: Response, access_token: str, refresh_token: str =
         path="/"
     )
     
-    # Refresh token
     if refresh_token:
         response.set_cookie(
             key="refresh_token",
@@ -226,34 +222,70 @@ create_token = create_access_token
 
 
 # ===================================================================
-# DEPENDENCY ДЛЯ ПОЛУЧЕНИЯ ПОЛЬЗОВАТЕЛЯ
+# УНИВЕРСАЛЬНАЯ DEPENDENCY ДЛЯ ПОЛУЧЕНИЯ ПОЛЬЗОВАТЕЛЯ
 # ===================================================================
 
-async def get_current_user_from_cookie(
+async def get_current_user(
     request: Request,
-    credentials: Optional[HTTPAuthorizationCredentials] = None
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme)
 ) -> dict:
     """
-    Получение текущего пользователя из Cookie (с fallback на Authorization header)
+    УНИВЕРСАЛЬНОЕ получение текущего пользователя:
+    - Из HttpOnly Cookie (access_token) - для веб-фронтенда
+    - Из Authorization: Bearer header - для Swagger и мобильных приложений
+    
+    Если токен не найден или невалидный — возвращает 401
     """
     token = None
     
-    # 1. Пробуем взять из Cookie
+    # 1. Пробуем взять токен из Cookie
     token = get_token_from_cookie(request, "access")
     
-    # 2. Если нет - пробуем из заголовка (для мобильных приложений)
+    # 2. Если нет в Cookie — пробуем из Bearer header
     if not token and credentials:
         token = credentials.credentials
     
+    # 3. Если токена нет нигде — ошибка
     if not token:
         raise HTTPException(status_code=401, detail="Нет токена")
     
+    # 4. Проверка blacklist
     if is_token_blacklisted(token):
         raise HTTPException(status_code=401, detail="Токен отозван")
     
+    # 5. Декодируем токен
     payload = decode_token(token, expected_type="access")
     if not payload:
         raise HTTPException(status_code=401, detail="Неверный токен")
     
     return payload
-get_current_user = get_current_user_from_cookie
+
+
+async def get_current_user_optional(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme)
+) -> Optional[dict]:
+    """
+    ОПЦИОНАЛЬНОЕ получение пользователя (не падает с 401)
+    Возвращает None если пользователь не авторизован
+    """
+    token = None
+    
+    # Пробуем из Cookie
+    token = get_token_from_cookie(request, "access")
+    
+    # Пробуем из Bearer
+    if not token and credentials:
+        token = credentials.credentials
+    
+    if not token:
+        return None
+    
+    if is_token_blacklisted(token):
+        return None
+    
+    payload = decode_token(token, expected_type="access")
+    if not payload:
+        return None
+    
+    return payload

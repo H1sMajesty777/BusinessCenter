@@ -1,4 +1,7 @@
+// frontend/src/contexts/FavoritesContext.jsx
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getFavorites, addFavorite, removeFavorite, checkFavorite } from '../services/favoritesService';
 
 const FavoritesContext = createContext();
 
@@ -6,55 +9,83 @@ export const useFavorites = () => useContext(FavoritesContext);
 
 export const FavoritesProvider = ({ children }) => {
   const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Загрузка избранного из localStorage при запуске
+  // Загрузка избранного с сервера при монтировании
   useEffect(() => {
-    const stored = localStorage.getItem('favorites');
-    if (stored) {
-      try {
-        setFavorites(JSON.parse(stored));
-      } catch (e) {
-        console.error('Ошибка загрузки избранного:', e);
-        setFavorites([]);
-      }
-    }
+    loadFavorites();
   }, []);
 
-  // Сохранение в localStorage при изменении
-  useEffect(() => {
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-  }, [favorites]);
-
-  const addToFavorites = (office) => {
-    setFavorites(prev => {
-      if (prev.some(f => f.id === office.id)) return prev;
-      return [...prev, office];
-    });
+  const loadFavorites = async () => {
+    try {
+      const data = await getFavorites();
+      setFavorites(data);
+    } catch (error) {
+      console.error('Ошибка загрузки избранного:', error);
+      setFavorites([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const removeFromFavorites = (officeId) => {
-    setFavorites(prev => prev.filter(f => f.id !== officeId));
+  const addToFavorites = async (office) => {
+    try {
+      await addFavorite(office.id);
+      setFavorites(prev => {
+        if (prev.some(f => f.office_id === office.id)) return prev;
+        // Сохраняем офис с нужными полями
+        const favoriteOffice = {
+          id: office.id,
+          office_id: office.id,
+          office_number: office.office_number,
+          floor: office.floor,
+          area_sqm: office.area_sqm,
+          price_per_month: office.price_per_month,
+          is_free: office.is_free
+        };
+        return [favoriteOffice, ...prev];
+      });
+    } catch (error) {
+      console.error('Ошибка добавления в избранное:', error);
+    }
   };
 
-  const isFavorite = (officeId) => {
-    return favorites.some(f => f.id === officeId);
+  const removeFromFavorites = async (officeId) => {
+    try {
+      await removeFavorite(officeId);
+      setFavorites(prev => prev.filter(f => f.office_id !== officeId));
+    } catch (error) {
+      console.error('Ошибка удаления из избранного:', error);
+    }
   };
 
-  const toggleFavorite = (office) => {
-    if (isFavorite(office.id)) {
-      removeFromFavorites(office.id);
+  const isFavorite = async (officeId) => {
+    try {
+      return await checkFavorite(officeId);
+    } catch (error) {
+      console.error('Ошибка проверки избранного:', error);
+      return false;
+    }
+  };
+
+  const toggleFavorite = async (office) => {
+    const isFav = favorites.some(f => f.office_id === office.id);
+    if (isFav) {
+      await removeFromFavorites(office.id);
     } else {
-      addToFavorites(office);
+      await addToFavorites(office);
     }
   };
 
   return (
     <FavoritesContext.Provider value={{ 
       favorites, 
+      loading,
       addToFavorites, 
       removeFromFavorites, 
-      isFavorite, 
-      toggleFavorite 
+      isFavorite: (officeId) => favorites.some(f => f.office_id === officeId),
+      toggleFavorite,
+      refreshFavorites: loadFavorites
     }}>
       {children}
     </FavoritesContext.Provider>

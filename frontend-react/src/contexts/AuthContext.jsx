@@ -1,4 +1,5 @@
 // frontend/src/contexts/AuthContext.jsx
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import api from '../services/api';
 
@@ -10,75 +11,60 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Загрузка пользователя из localStorage при запуске
+  // Проверка авторизации при загрузке приложения
   useEffect(() => {
-    // Проверяем, находимся ли мы на странице авторизации
-    const isAuthPage = window.location.pathname === '/auth' || 
-                       window.location.pathname === '/login' || 
-                       window.location.pathname === '/register';
-    
-    // Если на странице авторизации — не загружаем пользователя
-    if (isAuthPage) {
-      setLoading(false);
-      return;
-    }
-    
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    const accessToken = localStorage.getItem('access_token');
-    
-    if (storedUser && (token || accessToken)) {
-      try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        
-        // Устанавливаем токен для API запросов
-        if (token) {
-          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        } else if (accessToken) {
-          api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-        }
-      } catch (e) {
-        console.error('Ошибка загрузки пользователя:', e);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('access_token');
-        setUser(null);
+    const checkAuth = async () => {
+      // Не проверяем на странице авторизации
+      const isAuthPage = window.location.pathname === '/auth' || 
+                         window.location.pathname === '/login' || 
+                         window.location.pathname === '/register';
+      
+      if (isAuthPage) {
+        setLoading(false);
+        return;
       }
-    } else {
-      // Очищаем всё, если нет данных
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      localStorage.removeItem('access_token');
-      delete api.defaults.headers.common['Authorization'];
-      setUser(null);
-    }
+      
+      try {
+        // Пытаемся получить текущего пользователя
+        // Кука access_token отправится автоматически (withCredentials: true)
+        const response = await api.get('/auth/me');
+        
+        if (response.data) {
+          setUser(response.data);
+          console.log('✅ Авторизация восстановлена:', response.data.login);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('❌ Ошибка проверки авторизации:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    setLoading(false);
+    checkAuth();
   }, []);
 
-  const login = (userData, token = null) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-    
-    if (token) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('access_token', token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    }
+  const login = async (loginData, token = null) => {
+    // При логине сохраняем пользователя в state
+    setUser(loginData);
+    // Не сохраняем токен в localStorage — он уже в Cookie!
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('access_token');
-    delete api.defaults.headers.common['Authorization'];
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Ошибка при выходе:', error);
+    } finally {
+      setUser(null);
+      // Не чистим localStorage — там ничего нет!
+    }
   };
 
   const updateUser = (userData) => {
     setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   return (

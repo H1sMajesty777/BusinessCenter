@@ -10,6 +10,7 @@ import ForecastPage from './pages/ForecastPage';
 import AdminPage from './pages/AdminPage';
 import ClientDashboard from './pages/ClientDashboard';
 import AuthPage from './pages/AuthPage';
+import ManagerDashboard from './pages/ManagerDashboard';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -60,6 +61,7 @@ const AppContent = () => {
         <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
         <Route path="/office/:id" element={<PrivateRoute><OfficeDetailPage /></PrivateRoute>} />
         <Route path="/client-dashboard" element={<PrivateRoute><ClientDashboard /></PrivateRoute>} />
+        <Route path="/manager" element={<ManagerRoute><ManagerDashboard /></ManagerRoute>} />
         <Route path="/forecast" element={<ManagerRoute><ForecastPage /></ManagerRoute>} />
         <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         

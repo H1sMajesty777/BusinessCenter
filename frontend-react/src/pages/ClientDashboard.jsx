@@ -15,7 +15,7 @@ import '../styles/clientDashboard.css';
 const ClientDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { favorites, removeFromFavorites } = useFavorites();
+  const { favorites, loading: favoritesLoading, removeFromFavorites } = useFavorites();
   const [activeTab, setActiveTab] = useState('applications');
   const [applications, setApplications] = useState([]);
   const [contracts, setContracts] = useState([]);

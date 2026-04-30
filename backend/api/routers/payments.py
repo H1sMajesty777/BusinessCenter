@@ -12,7 +12,8 @@ from api.database import get_db
 from api.security import decode_token
 from api.models.payment import PaymentCreate, PaymentUpdate, PaymentResponse
 from api.rate_limiter import limiter, RATE_LIMITS
-from api.security import get_current_user_from_cookie as get_current_user
+# from api.security import get_current_user_from_cookie as get_current_user
+from api.security import get_current_user 
 
 # Router с правильным префиксом
 router = APIRouter(prefix="/api/payments", tags=["Payments"])

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
-# from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import List, Optional
 from api.database import get_db
 from api.security import hash_password, verify_password, create_token, decode_token
 from api.models.user import UserCreate, UserUpdate, UserResponse, Token
 from api.rate_limiter import limiter, RATE_LIMITS
-from api.security import get_current_user_from_cookie as get_current_user
+# from api.security import get_current_user_from_cookie as get_current_user
+from api.security import get_current_user 
 
 # Router с правильным префиксом
 router = APIRouter(prefix="/api/users", tags=["Users"])
@@ -495,6 +496,46 @@ def get_users_stats(request: Request, current_user: dict = Depends(get_current_u
             "active_users": active,
             "inactive_users": inactive,
             "by_role": [{"role_name": r['name'], "count": r['count']} for r in by_role]
+        }
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.get("/{user_id}/contacts", response_model=dict)
+@limiter.limit(RATE_LIMITS["authenticated"])
+def get_user_contacts(
+    request: Request,
+    user_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Получение контактов пользователя (телефон, email)
+    Доступ: Админ, Менеджер или сам пользователь
+    """
+    # Проверка прав
+    if current_user.get("role_id") not in [1, 2]:  # админ или менеджер
+        if str(current_user.get("sub")) != str(user_id):
+            raise HTTPException(status_code=403, detail="Нет доступа к контактам")
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute(
+            "SELECT id, login, email, phone, full_name FROM users WHERE id = %s",
+            (user_id,)
+        )
+        user = cursor.fetchone()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+        return {
+            "id": user['id'],
+            "login": user['login'],
+            "email": user['email'],
+            "phone": user['phone'],
+            "full_name": user['full_name']
         }
     finally:
         cursor.close()

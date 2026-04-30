@@ -84,7 +84,7 @@ const AuthPage = () => {
     }
     
     try {
-      await api.post('/users', {
+      await api.post('/users/register', {
         login: registerData.login,
         password: registerData.password,
         email: registerData.email,
