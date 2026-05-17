@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS favorites (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, office_id)
 );
-
+Ё
 -- ============================================================
 -- ИНДЕКСЫ ДЛЯ ОПТИМИЗАЦИИ ЗАПРОСОВ
 -- ============================================================
