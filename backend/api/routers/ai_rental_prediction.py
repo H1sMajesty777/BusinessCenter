@@ -122,6 +122,11 @@ def predict_office_rental(
         
         # Добавляем рекомендации
         result["recommendations"] = _generate_recommendations(result)
+        if result.get('top_factors'):
+            total_importance = sum(f['importance'] for f in result['top_factors'])
+            if total_importance > 0:
+                for f in result['top_factors']:
+                    f['importance'] = f['importance'] / total_importance
         
         return result
     

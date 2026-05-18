@@ -8,6 +8,7 @@ from api.models.application import ApplicationCreate, ApplicationUpdate, Applica
 from api.rate_limiter import limiter, RATE_LIMITS
 # from api.security import get_current_user_from_cookie as get_current_user
 from api.security import get_current_user 
+from api.utils.audit_logger import log_insert, log_update, log_delete
 
 
 router = APIRouter(prefix="/api/applications", tags=["Applications"])
@@ -80,9 +81,21 @@ def create_application(request: Request, app: ApplicationCreate = Body(...), cur
                VALUES (%s, %s, %s, %s, %s) RETURNING id""",
             (user_id, app.office_id, 1, app.comment, datetime.now())
         )
+        
         row = cursor.fetchone()
         conn.commit()
         
+        log_insert(
+            user_id=user_id,
+            table_name="applications",
+            record_id=row['id'],
+            new_values={
+                "office_id": app.office_id,
+                "status_id": 1,
+                "comment": app.comment
+            },
+            conn=conn
+        )
         return {"id": row['id'], "message": "Заявка создана", "status": "новая"}
     
     finally:
@@ -178,7 +191,12 @@ def get_my_applications(request: Request, current_user: dict = Depends(get_curre
 
 @router.put("/{app_id}/status", response_model=dict)
 @limiter.limit(RATE_LIMITS["authenticated"])
-def update_application_status(request: Request, app_id: int, app_update: ApplicationUpdate = Body(...), current_user: dict = Depends(get_current_user)):
+def update_application_status(
+    request: Request, 
+    app_id: int, 
+    app_update: ApplicationUpdate = Body(...), 
+    current_user: dict = Depends(get_current_user)
+):
     """
     Изменение статуса заявки
     Доступ: Админ/Менеджер
@@ -189,6 +207,15 @@ def update_application_status(request: Request, app_id: int, app_update: Applica
     cursor = conn.cursor()
     
     try:
+        # Получаем старый статус до обновления
+        cursor.execute("SELECT status_id FROM applications WHERE id = %s", (app_id,))
+        old_row = cursor.fetchone()
+        old_status = old_row['status_id'] if old_row else None
+        
+        if not old_row:
+            raise HTTPException(status_code=404, detail="Заявка не найдена")
+        
+        # Обновляем статус
         cursor.execute(
             "UPDATE applications SET status_id = %s, reviewed_at = %s WHERE id = %s RETURNING id",
             (app_update.status_id, datetime.now(), app_id)
@@ -197,9 +224,23 @@ def update_application_status(request: Request, app_id: int, app_update: Applica
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Заявка не найдена")
         
+        # Логируем изменение статуса в аудит
+        log_update(
+            user_id=current_user.get("sub"),
+            table_name="applications",
+            record_id=app_id,
+            old_values={"status_id": old_status},
+            new_values={"status_id": app_update.status_id},
+            conn=conn
+        )
+        
         conn.commit()
         
-        return {"message": f"Статус заявки {app_id} обновлён", "new_status_id": app_update.status_id}
+        return {
+            "message": f"Статус заявки {app_id} обновлён", 
+            "new_status_id": app_update.status_id,
+            "old_status_id": old_status
+        }
     
     finally:
         cursor.close()

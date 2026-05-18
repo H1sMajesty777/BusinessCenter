@@ -1,0 +1,457 @@
+/* frontend/src/styles/officeCard.css */
+/* ============================================ */
+/* СОВРЕМЕННЫЕ ПРЕМИАЛЬНЫЕ КАРТОЧКИ ОФИСОВ */
+/* ============================================ */
+
+.office-card {
+  background: white;
+  border-radius: 28px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.office-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.25);
+}
+
+/* Премиальный градиентный бордер при ховере */
+.office-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 28px;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #2563eb, #8b5cf6, #ec4899);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.office-card:hover::before {
+  opacity: 1;
+}
+
+/* ========== AI БЕЙДЖ ========== */
+.office-card-ai-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 20;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  backdrop-filter: blur(12px);
+  padding: 6px 14px;
+  border-radius: 40px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.office-card-ai-badge::before {
+  content: '✨';
+  font-size: 12px;
+}
+
+/* ========== ИЗОБРАЖЕНИЕ ========== */
+.office-card-image {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.office-card-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+  pointer-events: none;
+}
+
+/* Слайдер внутри карточки */
+.office-card .image-slider {
+  height: 100%;
+  width: 100%;
+}
+
+.office-card .slider-container {
+  height: 100%;
+}
+
+.office-card .slider-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.office-card:hover .slider-slide img {
+  transform: scale(1.05);
+}
+
+/* ========== КНОПКА ИЗБРАННОГО ========== */
+.office-card-favorite {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 20;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  transition: all 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.office-card-favorite:hover {
+  transform: scale(1.12);
+  color: #ef4444;
+  background: white;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.25);
+}
+
+.office-card-favorite.active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+.office-card-favorite.active:hover {
+  transform: scale(1.08);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+/* ========== СОДЕРЖИМОЕ КАРТОЧКИ ========== */
+.office-card-content {
+  padding: 20px 20px 24px;
+  background: white;
+  position: relative;
+}
+
+/* Заголовок */
+.office-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.office-card-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.office-card-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.office-card-location svg {
+  width: 14px;
+  height: 14px;
+  color: #3b82f6;
+}
+
+/* Статус */
+.office-card-status {
+  padding: 5px 14px;
+  border-radius: 40px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  transition: all 0.2s;
+}
+
+.office-card-status.free {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #166534;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.office-card-status.rented {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Характеристики */
+.office-card-specs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 16px;
+}
+
+.spec-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.spec-item svg {
+  width: 18px;
+  height: 18px;
+  color: #3b82f6;
+  stroke-width: 1.8;
+}
+
+.spec-item.price {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.price-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #2563eb;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.price-period {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Метрики (просмотры, заявки, спрос) */
+.office-card-metrics {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.metric {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 10px 12px;
+  border-radius: 18px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.metric:hover {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.metric svg {
+  width: 16px;
+  height: 16px;
+  color: #3b82f6;
+}
+
+.metric-value {
+  font-weight: 700;
+  font-size: 15px;
+  color: #1e293b;
+}
+
+.metric-label {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.metric.demand {
+  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+}
+
+/* Прогноз (AI) */
+.office-card-forecast {
+  margin-bottom: 20px;
+  padding: 14px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.forecast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.forecast-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.forecast-label svg {
+  width: 14px;
+  height: 14px;
+  color: #8b5cf6;
+}
+
+.forecast-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: #8b5cf6;
+}
+
+.forecast-bar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.forecast-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+  border-radius: 10px;
+  transition: width 0.6s cubic-bezier(0.22, 0.97, 0.36, 1);
+  position: relative;
+}
+
+.forecast-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 30px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4));
+  border-radius: 10px;
+}
+
+/* Кнопка "Подробнее" */
+.office-card-button {
+  width: 100%;
+  padding: 14px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  margin-top: 4px;
+}
+
+.office-card-button svg {
+  transition: transform 0.2s ease;
+}
+
+.office-card-button:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: transparent;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+}
+
+.office-card-button:hover svg {
+  transform: translateX(5px);
+  color: white;
+}
+
+.office-card {
+  opacity: 1;
+}
+
+/* ========== АДАПТИВНОСТЬ ========== */
+@media (max-width: 768px) {
+  .office-card-image {
+    height: 200px;
+  }
+  
+  .office-card-content {
+    padding: 16px;
+  }
+  
+  .office-card-title {
+    font-size: 18px;
+  }
+  
+  .price-value {
+    font-size: 18px;
+  }
+  
+  .office-card-metrics {
+    gap: 6px;
+  }
+  
+  .metric {
+    padding: 8px 10px;
+  }
+  
+  .metric-value {
+    font-size: 13px;
+  }
+  
+  .office-card-button {
+    padding: 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .office-card-specs {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .spec-item.price {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+  }
+}

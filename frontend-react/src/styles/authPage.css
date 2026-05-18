@@ -148,6 +148,8 @@
   top: 50%;
   transform: translateY(-50%);
   color: #94a3b8;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .form-group input {
@@ -158,6 +160,8 @@
   font-size: 14px;
   transition: all 0.2s;
   outline: none;
+  background: white;
+  position: relative;
 }
 
 .form-group input:focus {
@@ -174,6 +178,7 @@
   border: none;
   cursor: pointer;
   color: #94a3b8;
+  z-index: 2;
 }
 
 .submit-btn {

@@ -1,0 +1,115 @@
+/* frontend/src/styles/slider-fix.css - ПРИОРИТЕТНЫЙ ФАЙЛ */
+
+/* Полностью перезаписываем стили слайдера с !important */
+.image-slider.image-slider {
+  position: relative !important;
+  width: 100% !important;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+}
+
+/* Стрелки - максимальная специфичность */
+.image-slider .slider-arrow,
+.image-slider .slider-arrow.slider-arrow {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 48px !important;
+  height: 48px !important;
+  background: white !important;
+  border: none !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 999 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: all 0.3s ease !important;
+}
+
+.image-slider:hover .slider-arrow {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.image-slider .slider-arrow.prev {
+  left: 20px !important;
+  right: auto !important;
+}
+
+.image-slider .slider-arrow.next {
+  right: 20px !important;
+  left: auto !important;
+}
+
+.image-slider .slider-arrow:hover {
+  transform: translateY(-50%) scale(1.1) !important;
+  background: #2563eb !important;
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3) !important;
+}
+
+/* Иконки внутри стрелок */
+.image-slider .slider-arrow svg {
+  width: 24px !important;
+  height: 24px !important;
+  stroke: #1e293b !important;
+  stroke-width: 2.5 !important;
+  display: block !important;
+}
+
+.image-slider .slider-arrow:hover svg {
+  stroke: white !important;
+}
+
+/* Счётчик */
+.image-slider .slider-counter {
+  position: absolute !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  background: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+  color: white !important;
+  padding: 6px 14px !important;
+  border-radius: 30px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  z-index: 999 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* Точки */
+.image-slider .slider-dots {
+  position: absolute !important;
+  bottom: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  gap: 10px !important;
+  z-index: 999 !important;
+  padding: 8px 16px !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 40px !important;
+}
+
+.image-slider .slider-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+}
+
+.image-slider .slider-dot.active {
+  background: white !important;
+  width: 24px !important;
+  border-radius: 10px !important;
+}

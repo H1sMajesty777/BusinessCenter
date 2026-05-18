@@ -1,22 +1,46 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ИДЕАЛЬНЫЙ ГЕНЕРАТОР ДАННЫХ ДЛЯ ML МОДЕЛИ
-Генерирует сбалансированные данные с правильными классами
+РАСШИРЕННЫЙ ГЕНЕРАТОР ДАННЫХ ДЛЯ ML МОДЕЛИ
 """
 
 import psycopg
 import random
-import numpy as np
+import json
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+# =========================================================
+# КОНФИГУРАЦИЯ
+# =========================================================
+NUM_OFFICES_TO_ADD = 30
+NUM_CLIENTS = 40
+RENTED_RATIO = 0.45
+
+def get_seasonal_factor(date):
+    month = date.month
+    if month in [3, 4, 5, 9, 10]:
+        return 1.6
+    elif month in [6, 7, 8]:
+        return 0.5
+    else:
+        return 0.9
+
+def get_duration_by_price(price):
+    if price < 25000:
+        return random.randint(10, 45)
+    elif price < 60000:
+        return random.randint(30, 120)
+    elif price < 100000:
+        return random.randint(60, 240)
+    else:
+        return random.randint(120, 600)
+
 def main():
     print('\n' + '='*60)
-    print('🚀 ИДЕАЛЬНЫЙ ГЕНЕРАТОР ДАННЫХ ДЛЯ ML')
+    print('🚀 РАСШИРЕННЫЙ ГЕНЕРАТОР ДАННЫХ ДЛЯ ML')
     print('='*60 + '\n')
     
-    # Подключение
     conn = psycopg.connect(
         host='db',
         port=5432,
@@ -27,68 +51,135 @@ def main():
     cur = conn.cursor()
     
     # =========================================================
-    # 1. ОЧИСТКА
+    # 1. ДОБАВЛЯЕМ НОВЫЕ ОФИСЫ
     # =========================================================
-    print('Очистка старых данных...')
-    cur.execute('TRUNCATE office_views, applications, contracts, payments RESTART IDENTITY CASCADE')
-    conn.commit()
-    print('Очищено\n')
+    print(f'📦 ДОБАВЛЕНИЕ {NUM_OFFICES_TO_ADD} НОВЫХ ОФИСОВ...')
     
-    # =========================================================
-    # 2. ПОЛУЧАЕМ ОФИСЫ
-    # =========================================================
-    cur.execute('SELECT id, office_number, floor, price_per_month FROM offices')
-    offices = cur.fetchall()
-    print(f'Офисов: {len(offices)}')
+    cur.execute('SELECT DISTINCT floor FROM offices ORDER BY floor')
+    existing_floors = [f[0] for f in cur.fetchall()]
+    if not existing_floors:
+        existing_floors = list(range(1, 6))
     
-    # =========================================================
-    # 3. СОЗДАЁМ КЛИЕНТОВ
-    # =========================================================
-    print('Создание клиентов...')
-    cur.execute("DELETE FROM users WHERE role_id = 3 AND login LIKE 'client_%'")
+    # Получаем существующие номера офисов
+    cur.execute('SELECT office_number FROM offices')
+    existing_offices = set([o[0] for o in cur.fetchall()])
     
-    for i in range(25):
+    added = 0
+    for i in range(NUM_OFFICES_TO_ADD * 2):
+        if added >= NUM_OFFICES_TO_ADD:
+            break
+            
+        floor = random.choice(existing_floors)
+        num = random.randint(1, 99)
+        office_number = f"{floor}{num:02d}"
+        
+        if office_number in existing_offices:
+            continue
+            
+        existing_offices.add(office_number)
+        
+        area = random.choice([25, 35, 45, 55, 65, 80, 100, 120, 150, 180, 220])
+        price_per_month = area * random.choice([400, 450, 500, 550, 600, 700, 800])
+        price_per_month = round(price_per_month / 1000) * 1000
+        
+        description = f"Современный офис площадью {area} м² на {floor} этаже. " + random.choice([
+            "Отличное освещение, панорамные окна.", "Ремонт класса А, кондиционирование.",
+            "Удобная планировка, возможна перепланировка.", "Тихий этаж, вид на парк.",
+            "Доступ 24/7, своя парковка.", "Премиальная отделка, готовая мебель."
+        ])
+        
+        amenities = {
+            "wifi": True,
+            "parking": random.random() > 0.3,
+            "kitchen": random.random() > 0.5,
+            "conditioning": True,
+            "elevator": floor > 3,
+            "premium": area > 150 or price_per_month > 100000
+        }
+        
         cur.execute("""
-            INSERT INTO users (login, password_hash, email, phone, full_name, role_id, is_active)
-            VALUES (%s, crypt('client123', gen_salt('bf')), %s, %s, %s, 3, TRUE)
-            ON CONFLICT (login) DO NOTHING
-        """, (
-            f'client_{i+1}',
-            f'client{i+1}@example.com',
-            f'+7 (999) 000-{i+1:02d}',
-            f'Клиент {i+1}'
-        ))
+            INSERT INTO offices (office_number, floor, area_sqm, price_per_month, description, amenities, is_free)
+            VALUES (%s, %s, %s, %s, %s, %s, TRUE)
+        """, (office_number, floor, area, price_per_month, description, json.dumps(amenities)))
+        
+        added += 1
+        if added % 10 == 0:
+            print(f'   Добавлено {added} / {NUM_OFFICES_TO_ADD} офисов...')
+    
+    conn.commit()
+    print(f'✅ Добавлено {added} новых офисов')
+    
+    cur.execute('SELECT id, office_number, floor, price_per_month, area_sqm FROM offices')
+    offices = cur.fetchall()
+    print(f'✅ Всего офисов в системе: {len(offices)}\n')
+    
+    # =========================================================
+    # 2. ОЧИСТКА СТАРЫХ ДАННЫХ (сначала удаляем зависимости)
+    # =========================================================
+    print('🗑️ ОЧИСТКА СТАРЫХ ДАННЫХ...')
+    cur.execute('TRUNCATE payments RESTART IDENTITY CASCADE')
+    cur.execute('TRUNCATE contracts RESTART IDENTITY CASCADE')
+    cur.execute('TRUNCATE applications RESTART IDENTITY CASCADE')
+    cur.execute('TRUNCATE office_views RESTART IDENTITY CASCADE')
+    conn.commit()
+    print('✅ Очищены все связанные данные\n')
+    
+    # =========================================================
+    # 3. УДАЛЯЕМ СТАРЫХ КЛИЕНТОВ И СОЗДАЁМ НОВЫХ
+    # =========================================================
+    print(f'👥 УДАЛЕНИЕ СТАРЫХ КЛИЕНТОВ...')
+    cur.execute("DELETE FROM users WHERE role_id = 3 AND login LIKE 'client_%'")
+    conn.commit()
+    
+    print(f'👥 СОЗДАНИЕ {NUM_CLIENTS} НОВЫХ КЛИЕНТОВ...')
+    for i in range(NUM_CLIENTS):
+        try:
+            cur.execute("""
+                INSERT INTO users (login, password_hash, email, phone, full_name, role_id, is_active)
+                VALUES (%s, crypt('client123', gen_salt('bf')), %s, %s, %s, 3, TRUE)
+            """, (
+                f'client_{i+1}',
+                f'client{i+1}@example.com',
+                f'+7 (999) 000-{i+1:02d}',
+                f'Клиент {i+1}'
+            ))
+        except Exception as e:
+            print(f'   Предупреждение: {e}')
     conn.commit()
     
     cur.execute('SELECT id FROM users WHERE role_id = 3')
     users = [u[0] for u in cur.fetchall()]
-    print(f'Клиентов: {len(users)}\n')
+    print(f'✅ Клиентов: {len(users)}\n')
     
     # =========================================================
     # 4. ГЕНЕРАЦИЯ ПРОСМОТРОВ
     # =========================================================
-    print('Генерация просмотров...')
+    print('👁️ ГЕНЕРАЦИЯ ПРОСМОТРОВ...')
     view_count = 0
     
     for office in offices:
         office_id = office[0]
         price = float(office[3])
         
-        # Популярность офиса
         popularity = 1.0
         if price < 30000:
             popularity = 1.5
-        elif price > 70000:
-            popularity = 0.6
-        
-        for user_id in users[:15]:
-            num_views = random.randint(5, 25)
-            num_views = int(num_views * popularity)
+        elif price > 100000:
+            popularity = 0.5
+            
+        for user_id in users[:30]:
+            num_views = int(random.randint(3, 20) * popularity)
             
             for _ in range(num_views):
-                view_date = datetime.now() - timedelta(days=random.randint(1, 180))
-                duration = random.randint(30, 600)
-                is_contacted = random.random() < (0.2 + duration / 1000)
+                days_ago = random.randint(1, 730)
+                view_date = datetime.now() - timedelta(days=days_ago)
+                
+                seasonal_factor = get_seasonal_factor(view_date)
+                if random.random() > seasonal_factor:
+                    continue
+                
+                duration = get_duration_by_price(price)
+                is_contacted = random.random() < (0.15 + duration / 800)
                 
                 cur.execute("""
                     INSERT INTO office_views (user_id, office_id, viewed_at, duration_seconds, is_contacted)
@@ -96,22 +187,21 @@ def main():
                 """, (user_id, office_id, view_date, duration, is_contacted))
                 view_count += 1
         
-        if office_id % 5 == 0:
+        if office_id % 10 == 0:
             print(f'   Обработано {office_id} офисов, создано {view_count} просмотров...')
     
     conn.commit()
-    print(f'Создано {view_count} просмотров\n')
+    print(f'✅ Создано {view_count} просмотров\n')
     
     # =========================================================
     # 5. ГЕНЕРАЦИЯ ЗАЯВОК
     # =========================================================
-    print('Генерация заявок...')
+    print('📝 ГЕНЕРАЦИЯ ЗАЯВОК...')
     app_count = 0
     
     for office in offices:
         office_id = office[0]
         
-        # Получаем кто смотрел этот офис
         cur.execute("""
             SELECT user_id, COUNT(*) as views, AVG(duration_seconds) as avg_duration
             FROM office_views
@@ -123,33 +213,31 @@ def main():
         for viewer in viewers:
             user_id, views, avg_duration = viewer
             
-            # Конвертируем Decimal в float
             if isinstance(avg_duration, Decimal):
                 avg_duration = float(avg_duration)
             elif avg_duration is None:
                 avg_duration = 0
             
-            views = int(views)
-            
-            # Вероятность подачи заявки
-            prob = 0.1 + (views * 0.02) + (avg_duration / 600 * 0.1)
-            prob = min(0.8, prob)
+            prob = 0.1 + (views * 0.02) + (avg_duration / 600 * 0.15)
+            prob = min(0.7, prob)
             
             if random.random() > prob:
                 continue
             
-            app_date = datetime.now() - timedelta(days=random.randint(1, 120))
-            # Статус: 1-новая, 2-одобрена, 3-отказана
-            status = random.choices([1, 2, 3], weights=[0.2, 0.6, 0.2])[0]
+            days_offset = random.randint(1, 90)
+            app_date = datetime.now() - timedelta(days=days_offset)
+            
+            seasonal = get_seasonal_factor(app_date)
+            if seasonal > 1:
+                status = random.choices([1, 2, 3], weights=[0.15, 0.75, 0.10])[0]
+            else:
+                status = random.choices([1, 2, 3], weights=[0.25, 0.55, 0.20])[0]
             
             comments = [
-                'Хочу осмотреть офис',
-                'Интересуют условия аренды',
-                'Когда можно приехать?',
-                'Есть ли скидки?',
-                'Какие коммунальные платежи?'
+                'Хочу осмотреть офис', 'Интересуют условия аренды',
+                'Когда можно приехать?', 'Есть ли скидки?'
             ]
-            comment = random.choice(comments) if random.random() > 0.5 else None
+            comment = random.choice(comments) if random.random() > 0.4 else None
             
             cur.execute("""
                 INSERT INTO applications (user_id, office_id, status_id, comment, created_at)
@@ -158,21 +246,20 @@ def main():
             app_count += 1
     
     conn.commit()
-    print(f'Создано {app_count} заявок\n')
+    print(f'✅ Создано {app_count} заявок\n')
     
     # =========================================================
-    # 6. ГЕНЕРАЦИЯ ДОГОВОРОВ (ТОЛЬКО ДЛЯ ЧАСТИ ОФИСОВ)
+    # 6. ГЕНЕРАЦИЯ ДОГОВОРОВ
     # =========================================================
-    print('📄 Генерация договоров (только для 40% офисов)...')
+    print('📄 ГЕНЕРАЦИЯ ДОГОВОРОВ...')
     
-    # Выбираем офисы для аренды (40% от всех)
     all_office_ids = [o[0] for o in offices]
-    rented_offices = set(random.sample(all_office_ids, int(len(all_office_ids) * 0.4)))
+    num_rented = int(len(all_office_ids) * RENTED_RATIO)
+    rented_offices = set(random.sample(all_office_ids, max(1, num_rented)))
     
     print(f'   Офисов с арендой: {len(rented_offices)}')
     print(f'   Офисов без аренды: {len(all_office_ids) - len(rented_offices)}')
     
-    # Получаем одобренные заявки
     cur.execute("""
         SELECT a.id, a.user_id, a.office_id, a.created_at, o.price_per_month
         FROM applications a
@@ -183,37 +270,28 @@ def main():
     approved_apps = cur.fetchall()
     
     contract_count = 0
-    offices_with_contracts = set()
-    
     for app in approved_apps:
         app_id, user_id, office_id, created_at, price = app
         price = float(price)
         
-        # Создаём договор только если офис выбран для аренды
         if office_id not in rented_offices:
             continue
         
         if created_at.tzinfo:
             created_at = created_at.replace(tzinfo=None)
         
-        # Дата подписания
-        sign_date = created_at + timedelta(days=random.randint(1, 30))
+        sign_date = created_at + timedelta(days=random.randint(1, 20))
         sign_date = min(sign_date, datetime.now())
         
-        # Длительность
-        months = random.choice([3, 6, 12, 24])
+        months = random.choices([3, 6, 12, 24], weights=[0.1, 0.2, 0.5, 0.2])[0]
         end_date = sign_date + timedelta(days=months * 30)
         
-        # Сумма со скидкой
-        discount = random.uniform(0.85, 1.0)
-        total = price * months * discount
+        total = price * months * random.uniform(0.85, 1.0)
         
-        # Статус договора
         if end_date < datetime.now():
-            status_id = 5  # истек
+            status_id = 5
         else:
-            status_id = 4  # действует
-            offices_with_contracts.add(office_id)
+            status_id = 4
             cur.execute('UPDATE offices SET is_free = FALSE WHERE id = %s', (office_id,))
         
         cur.execute("""
@@ -223,120 +301,57 @@ def main():
         contract_count += 1
     
     conn.commit()
-    print(f'Создано {contract_count} договоров\n')
+    print(f'✅ Создано {contract_count} договоров\n')
     
     # =========================================================
-    # 7. ГЕНЕРАЦИЯ ПЛАТЕЖЕЙ
-    # =========================================================
-    print('Генерация платежей...')
-    
-    cur.execute('SELECT id, start_date, end_date, total_amount FROM contracts')
-    contracts = cur.fetchall()
-    
-    payment_count = 0
-    for contract in contracts:
-        contract_id, start_date, end_date, total_amount = contract
-        total_amount = float(total_amount)
-        
-        months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
-        if months <= 0:
-            months = 1
-        
-        monthly = total_amount / months
-        
-        for m in range(months):
-            payment_date = start_date + timedelta(days=m * 30)
-            if payment_date > datetime.now().date():
-                continue
-            
-            # 80% платежей вовремя, 20% с задержкой
-            if random.random() > 0.8:
-                payment_date += timedelta(days=random.randint(1, 15))
-                status_id = 9  # просрочено
-            else:
-                status_id = 8  # оплачено
-            
-            cur.execute("""
-                INSERT INTO payments (contract_id, amount, payment_date, status_id, transaction_id)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (
-                contract_id,
-                Decimal(str(monthly * random.uniform(0.95, 1.05))),
-                payment_date,
-                status_id,
-                f'TX_{random.randint(10000, 99999)}'
-            ))
-            payment_count += 1
-    
-    conn.commit()
-    print(f'Создано {payment_count} платежей\n')
-    
-    # =========================================================
-    # 8. ПРОВЕРКА БАЛАНСА
-    # =========================================================
-    print('ПРОВЕРКА БАЛАНСА КЛАССОВ:')
-    
-    cur.execute("""
-        SELECT 
-            COUNT(CASE WHEN c.id IS NOT NULL AND c.signed_at > NOW() - INTERVAL '6 months' THEN 1 END) as rented_recently,
-            COUNT(CASE WHEN c.id IS NULL OR c.signed_at <= NOW() - INTERVAL '6 months' THEN 1 END) as not_rented_recently
-        FROM offices o
-        LEFT JOIN contracts c ON o.id = c.office_id
-    """)
-    balance = cur.fetchone()
-    
-    rented = balance[0] or 0
-    not_rented = balance[1] or 0
-    
-    print(f'Арендованы недавно: {rented} офисов')
-    print(f'Не арендованы: {not_rented} офисов')
-    
-    if rented > 0 and not_rented > 0:
-        print('ОТЛИЧНЫЙ БАЛАНС! Модель успешно обучится.')
-    else:
-        print('ВНИМАНИЕ: Нет баланса классов!')
-    
-    # =========================================================
-    # 9. ФИНАЛЬНАЯ СТАТИСТИКА
+    # 7. ФИНАЛЬНАЯ СТАТИСТИКА
     # =========================================================
     cur.execute("""
         SELECT 
             (SELECT COUNT(*) FROM office_views) as views,
             (SELECT COUNT(*) FROM applications) as apps,
             (SELECT COUNT(*) FROM contracts) as contracts,
-            (SELECT COUNT(*) FROM payments) as payments,
-            (SELECT COUNT(*) FROM users WHERE role_id = 3) as clients
+            (SELECT COUNT(*) FROM users WHERE role_id = 3) as clients,
+            (SELECT COUNT(*) FROM offices) as offices
     """)
     stats = cur.fetchone()
     
-    print('\n' + '='*60)
-    print('ФИНАЛЬНАЯ СТАТИСТИКА')
     print('='*60)
-    print(f'    Просмотров: {stats[0]}')
-    print(f'    Заявок: {stats[1]}')
-    print(f'    Договоров: {stats[2]}')
-    print(f'    Платежей: {stats[3]}')
-    print(f'    Клиентов: {stats[4]}')
+    print('📊 ФИНАЛЬНАЯ СТАТИСТИКА')
+    print('='*60)
+    print(f'   📍 Офисов: {stats[4]}')
+    print(f'   👥 Клиентов: {stats[3]}')
+    print(f'   👁️ Просмотров: {stats[0]}')
+    print(f'   📝 Заявок: {stats[1]}')
+    print(f'   📄 Договоров: {stats[2]}')
     
     if stats[1] > 0:
-        conv_app = (stats[2] / stats[1]) * 100
-        print(f'Конверсия заявка→договор: {conv_app:.1f}%')
-    if stats[0] > 0:
-        conv_view = (stats[1] / stats[0]) * 100
-        print(f'Конверсия просмотр→заявка: {conv_view:.1f}%')
+        conv = (stats[2] / stats[1]) * 100
+        print(f'   📈 Конверсия заявка→договор: {conv:.1f}%')
     
-    # =========================================================
-    # 10. ЗАВЕРШЕНИЕ
-    # =========================================================
+    cur.execute("""
+        SELECT 
+            COUNT(CASE WHEN c.id IS NOT NULL AND c.signed_at > NOW() - INTERVAL '6 months' THEN 1 END) as rented,
+            COUNT(CASE WHEN c.id IS NULL OR c.signed_at <= NOW() - INTERVAL '6 months' THEN 1 END) as not_rented
+        FROM offices o
+        LEFT JOIN contracts c ON o.id = c.office_id
+    """)
+    balance = cur.fetchone()
+    
+    print(f'\n   🎯 АРЕНДОВАНЫ (целевой класс): {balance[0] or 0} офисов')
+    print(f'   🎯 НЕ АРЕНДОВАНЫ: {balance[1] or 0} офисов')
+    
+    if balance[0] > 0 and balance[1] > 0:
+        print('\n   ✅ ОТЛИЧНЫЙ БАЛАНС! Модель успешно обучится.')
+    else:
+        print('\n   ⚠️ ВНИМАНИЕ: Нет баланса классов! Добавьте больше данных.')
+    
     cur.close()
     conn.close()
     
     print('\n' + '='*60)
-    print(' ГЕНЕРАЦИЯ ЗАВЕРШЕНА УСПЕШНО!')
+    print('🎉 ГЕНЕРАЦИЯ ЗАВЕРШЕНА!')
     print('='*60)
-    print('\n   Теперь выполни обучение модели через API:')
-    print('   POST /api/ai/rental-prediction/train?force=true')
-    print()
 
 if __name__ == '__main__':
     main()

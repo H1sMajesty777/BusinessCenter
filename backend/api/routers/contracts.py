@@ -8,6 +8,7 @@ from api.models.contract import ContractCreate, ContractResponse
 from api.rate_limiter import limiter, RATE_LIMITS
 # from api.security import get_current_user_from_cookie as get_current_user
 from api.security import get_current_user 
+from api.utils.audit_logger import log_insert, log_update, log_delete
 
 
 router = APIRouter(prefix="/api/contracts", tags=["Contracts"])
@@ -74,6 +75,18 @@ def create_contract(request: Request, contract: ContractCreate = Body(...), curr
                VALUES (%s, %s, %s, %s, %s, %s, 4) RETURNING id, signed_at""",
             (contract.application_id, contract.user_id, contract.office_id, 
              contract.start_date, contract.end_date, contract.total_amount)
+        )
+        log_insert(
+            user_id=current_user.get("sub"),
+            table_name="contracts",
+            record_id=row['id'],
+            new_values={
+                "application_id": contract.application_id,
+                "user_id": contract.user_id,
+                "office_id": contract.office_id,
+                "total_amount": contract.total_amount
+            },
+            conn=conn
         )
         row = cursor.fetchone()
         

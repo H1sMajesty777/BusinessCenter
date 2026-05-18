@@ -4,6 +4,7 @@ import api from '../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import '../styles/forecast.css';
 import { ChartNoAxesCombined, Brain, RefreshCw } from 'lucide-react';
+import { getFeatureInfo, formatFeatureValue } from '../utils/featureMapping';
 
 const ForecastPage = () => {
   const { user } = useAuth();
@@ -300,11 +301,16 @@ const ForecastPage = () => {
                   </td>
                   <td>
                     <div className="factors-list">
-                      {office.top_factors?.slice(0, 2).map((factor, idx) => (
-                        <span key={idx} className="factor-tag">
-                          {factor.feature}: {(factor.importance * 100).toFixed(0)}%
-                        </span>
-                      ))}
+                      {office.top_factors?.slice(0, 3).map((factor, idx) => {
+                        const featureInfo = getFeatureInfo(factor.feature);
+                        return (
+                          <div key={idx} className="factor-item" title={featureInfo.description}>
+                            <span className="factor-icon">{featureInfo.icon}</span>
+                            <span className="factor-name">{featureInfo.name}</span>
+                            <span className="factor-value">{(factor.importance * 100).toFixed(0)}%</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </td>
                 </tr>

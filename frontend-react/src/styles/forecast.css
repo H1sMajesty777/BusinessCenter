@@ -370,3 +370,74 @@
     min-width: 120px;
   }
 }
+/* Факторы в таблице */
+.factors-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.factor-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  cursor: help;
+  transition: all 0.2s;
+}
+
+.factor-item:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.factor-icon {
+  font-size: 12px;
+}
+
+.factor-name {
+  color: #475569;
+  font-weight: 500;
+}
+
+.factor-value {
+  color: #2563eb;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+/* Факторы в детальной странице */
+.forecast-factors ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+}
+
+.forecast-factors li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+
+.forecast-factors .factor-icon {
+  font-size: 14px;
+  min-width: 24px;
+}
+
+.forecast-factors .factor-name {
+  flex: 1;
+  color: #334155;
+}
+
+.forecast-factors .factor-percent {
+  font-weight: 600;
+  color: #2563eb;
+  min-width: 45px;
+  text-align: right;
+}

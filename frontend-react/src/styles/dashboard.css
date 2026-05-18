@@ -1,297 +1,98 @@
-/* Dashboard Page Styles */
+/* frontend/src/styles/dashboard.css - ОЧИЩЕННАЯ ВЕРСИЯ */
+
+/* ============================================ */
+/* ТОЛЬКО ДЛЯ СТРАНИЦЫ DASHBOARD */
+/* ============================================ */
+
 .dashboard-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 30px 24px;
 }
 
-.office-card .image-slider {
-  max-width: 350px;
-  margin: 0 auto;
+/* Hero секция */
+.dashboard-hero {
+  text-align: center;
+  padding: 48px 20px 32px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 40px;
+  margin-bottom: 32px;
 }
 
 .dashboard-title {
-  margin-bottom: 30px;
-  text-align: center;
-  font-size: 36px;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-/* Filters Section */
-.filters-section {
-  background: #f5f5f5;
-  padding: 24px;
-  border-radius: 16px;
-  margin-bottom: 30px;
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  align-items: flex-end;
-}
-
-.filter-group {
-  flex: 1;
-  min-width: 150px;
-}
-
-.filter-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #334155;
-  font-size: 14px;
-}
-
-.filter-select,
-.filter-input {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  font-size: 14px;
-  background: white;
-  transition: all 0.2s;
-}
-
-.filter-select:focus,
-.filter-input:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.reset-btn {
-  padding: 10px 20px;
-  background: #64748b;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  height: 42px;
-  transition: background 0.2s;
-}
-
-.reset-btn:hover {
-  background: #475569;
-}
-
-/* Offices Grid */
-.offices-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 24px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 50px;
-  color: #64748b;
-}
-
-/* Office Card */
-.office-card {
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 20px;
-  background: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-  cursor: pointer;
-}
-
-.office-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.office-image {
-  height: 160px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-.office-image-placeholder {
-  font-size: 48px;
-  color: white;
-  opacity: 0.8;
-}
-
-.office-number {
-  font-size: 20px;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 8px;
-}
-
-.office-floor {
-  display: inline-block;
-  background: #f1f5f9;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  color: #475569;
+  font-size: 42px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0f172a 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   margin-bottom: 12px;
 }
 
-.office-details {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  padding: 12px 0;
-  border-top: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.detail-item {
-  text-align: center;
-  flex: 1;
-}
-
-.detail-label {
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.detail-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.office-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #2563eb;
-  margin-bottom: 16px;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-free {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.status-occupied {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.office-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.btn-details {
-  flex: 1;
-  padding: 10px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-details:hover {
-  background: #1d4ed8;
-}
-
-.btn-book {
-  flex: 1;
-  padding: 10px;
-  background: white;
-  color: #334155;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-book:hover {
-  border-color: #2563eb;
-  color: #2563eb;
-}
-
-.loading {
-  text-align: center;
-  padding: 50px;
+.dashboard-subtitle {
   font-size: 18px;
   color: #64748b;
 }
-/* Filters Section */
+
+/* Фильтры */
 .filters-section {
   background: white;
-  border-radius: 20px;
-  padding: 24px;
-  margin-bottom: 30px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 28px;
+  padding: 24px 28px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   border: 1px solid #e2e8f0;
 }
 
 .filters-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   align-items: flex-end;
 }
 
 .filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex: 1;
+  min-width: 160px;
 }
 
 .filter-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #334155;
-  display: flex;
-  align-items: center;
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
 }
 
-.filter-input,
-.filter-select {
-  padding: 10px 12px;
+.filter-input, .filter-select {
+  width: 100%;
+  padding: 12px 16px;
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 18px;
   font-size: 14px;
   transition: all 0.2s;
-  outline: none;
-  width: 100%;
+  background: white;
 }
 
-.filter-input:focus,
-.filter-select:focus {
+.filter-input:focus, .filter-select:focus {
+  outline: none;
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .filter-range {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
 .filter-range input {
   flex: 1;
-}
-
-.filter-range span {
-  color: #94a3b8;
+  padding: 12px 16px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 18px;
 }
 
 .filter-buttons {
@@ -299,105 +100,88 @@
   gap: 12px;
 }
 
-.apply-btn {
-  flex: 1;
-  padding: 10px 20px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 12px;
+.apply-btn, .reset-btn {
+  padding: 12px 28px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
+  gap: 8px;
+}
+
+.apply-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: none;
+  color: white;
 }
 
 .apply-btn:hover {
-  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
 }
 
 .reset-btn {
-  flex: 1;
-  padding: 10px 20px;
   background: white;
-  color: #475569;
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+  color: #64748b;
 }
 
 .reset-btn:hover {
   background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
-/* Кнопка избранного */
-.favorite-btn {
-  flex: 1;
-  padding: 10px;
+/* Сетка для карточек */
+.offices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 32px;
+  padding: 8px 0;
+}
+
+/* Состояния */
+.loading-state {
+  text-align: center;
+  padding: 60px;
+  color: #64748b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
   background: white;
-  color: #475569;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
+  border-radius: 32px;
 }
 
-.favorite-btn.active {
-  background: #fee2e2;
-  border-color: #dc2626;
-  color: #dc2626;
-}
-
-.favorite-btn:hover {
-  background: #f8fafc;
-  border-color: #dc2626;
-}
-
-/* Контейнер для кнопок в карточке */
-.office-actions {
-  display: flex;
-  gap: 12px;
+.empty-state h3 {
+  font-size: 20px;
   margin-top: 16px;
+  margin-bottom: 8px;
 }
 
-.btn-details {
-  flex: 1;
-  padding: 10px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.btn-details:hover {
-  background: #1d4ed8;
-}
-/* Responsive */
-@media (max-width: 1024px) {
-  .filters-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
+/* Адаптивность */
 @media (max-width: 768px) {
-  .filters-grid {
+  .dashboard-container {
+    padding: 20px 16px;
+  }
+  
+  .dashboard-title {
+    font-size: 32px;
+  }
+  
+  .offices-grid {
     grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .filters-grid {
+    flex-direction: column;
   }
   
   .filter-buttons {
-    flex-direction: column;
+    flex-direction: row;
   }
 }

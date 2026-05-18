@@ -1,4 +1,5 @@
 // frontend/src/App.jsx
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -8,7 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import OfficeDetailPage from './pages/OfficeDetailPage';
 import ForecastPage from './pages/ForecastPage';
 import AdminPage from './pages/AdminPage';
-import ClientDashboard from './pages/ClientDashboard';
+import ProfilePage from './pages/ProfilePage';
 import AuthPage from './pages/AuthPage';
 import ManagerDashboard from './pages/ManagerDashboard';
 
@@ -41,7 +42,7 @@ const ManagerRoute = ({ children }) => {
   
   if (!user) return <Navigate to="/auth" />;
   if (user.role_id !== 1 && user.role_id !== 2) {
-    return <Navigate to="/client-dashboard" />;
+    return <Navigate to="/dashboard" />;
   }
   return children;
 };
@@ -54,21 +55,23 @@ const AppContent = () => {
     <>
       {!hideHeader && <Header />}
       <Routes>
-        {/* ТОЛЬКО ЭТОТ ПУБЛИЧНЫЙ МАРШРУТ */}
         <Route path="/auth" element={<AuthPage />} />
         
-        {/* ЗАЩИЩЁННЫЕ МАРШРУТЫ */}
+        {/* Все пользователи */}
         <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
         <Route path="/office/:id" element={<PrivateRoute><OfficeDetailPage /></PrivateRoute>} />
-        <Route path="/client-dashboard" element={<PrivateRoute><ClientDashboard /></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        
+        {/* Только менеджеры и админы */}
         <Route path="/manager" element={<ManagerRoute><ManagerDashboard /></ManagerRoute>} />
         <Route path="/forecast" element={<ManagerRoute><ForecastPage /></ManagerRoute>} />
+        
+        {/* Только админы */}
         <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         
-        {/* РЕДИРЕКТ */}
+        {/* Редирект */}
         <Route path="/" element={<Navigate to="/dashboard" />} />
-        
-        {/* ВСЁ, ЧТО НЕ НАЙДЕНО — НА АВТОРИЗАЦИЮ */}
+        <Route path="/client-dashboard" element={<Navigate to="/profile" />} />
         <Route path="*" element={<Navigate to="/auth" />} />
       </Routes>
     </>

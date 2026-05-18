@@ -15,6 +15,7 @@ from api.models.user import LoginRequest, Token, UserResponse, TokenRefresh
 from api.rate_limiter import limiter, RATE_LIMITS
 # from api.security import get_current_user_from_cookie as get_current_user
 from api.security import get_current_user 
+from api.utils.audit_logger import log_login, log_logout
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 # security = HTTPBearer(auto_error=False)
@@ -92,7 +93,7 @@ def login(
         # Проверка существования
         if not user:
             raise HTTPException(status_code=401, detail="Неверный логин/email или пароль")
-        
+            
         user_id = user['id']
         user_login = user['login']  # возвращаем именно login, не email
         password_hash = user['password_hash']
@@ -125,7 +126,9 @@ def login(
         
         # Сохраняем refresh токен в Redis
         store_refresh_token(str(user_id), refresh_token)
-        
+
+        log_login(user_id=user_id, success=True, conn=conn)
+
         # Возвращаем информацию о пользователе
         return {
             "message": "Успешный вход",

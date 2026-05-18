@@ -8,6 +8,7 @@ import {
   BarChart3, Settings, Mail, Phone, User, Lock, Unlock,
   X, Save, RefreshCw, Eye, EyeOff, FileText, Clock, Maximize2, DollarSign
 } from 'lucide-react';
+import OfficeEditor from '../components/OfficeEditor';
 
 const AdminPage = () => {
   const { user } = useAuth();
@@ -40,6 +41,8 @@ const AdminPage = () => {
       setLoading(false);
     }
   };
+  const [showOfficeEditor, setShowOfficeEditor] = useState(false);
+  const [editingOffice, setEditingOffice] = useState(null);
 
   const loadOffices = async () => {
     setLoading(true);
@@ -488,57 +491,12 @@ const AdminPage = () => {
         </div>
       )}
 
-      {showOfficeModal && (
-        <div className="modal-overlay" onClick={() => setShowOfficeModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>
-                {editingItem ? <Edit2 size={18} style={{ marginRight: '8px' }} /> : <Plus size={18} style={{ marginRight: '8px' }} />}
-                {editingItem ? 'Редактировать офис' : 'Добавить офис'}
-              </h3>
-              <button className="close-modal" onClick={() => setShowOfficeModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-field">
-              <label><Home size={14} style={{ marginRight: '4px' }} /> Номер офиса *</label>
-              <input value={officeForm.office_number} onChange={(e) => setOfficeForm({ ...officeForm, office_number: e.target.value })} />
-            </div>
-            <div className="modal-field">
-              <label><Building2 size={14} style={{ marginRight: '4px' }} /> Этаж *</label>
-              <input type="number" value={officeForm.floor} onChange={(e) => setOfficeForm({ ...officeForm, floor: parseInt(e.target.value) })} />
-            </div>
-            <div className="modal-field">
-              <label><Maximize2 size={14} style={{ marginRight: '4px' }} /> Площадь (м²) *</label>
-              <input type="number" step="0.1" value={officeForm.area_sqm} onChange={(e) => setOfficeForm({ ...officeForm, area_sqm: parseFloat(e.target.value) })} />
-            </div>
-            <div className="modal-field">
-              <label><DollarSign size={14} style={{ marginRight: '4px' }} /> Цена (₽/мес) *</label>
-              <input type="number" value={officeForm.price_per_month} onChange={(e) => setOfficeForm({ ...officeForm, price_per_month: parseInt(e.target.value) })} />
-            </div>
-            <div className="modal-field">
-              <label><FileText size={14} style={{ marginRight: '4px' }} /> Описание</label>
-              <textarea rows="3" value={officeForm.description} onChange={(e) => setOfficeForm({ ...officeForm, description: e.target.value })} />
-            </div>
-            <div className="modal-field">
-              <label><CheckCircle size={14} style={{ marginRight: '4px' }} /> Статус</label>
-              <select value={officeForm.is_free} onChange={(e) => setOfficeForm({ ...officeForm, is_free: e.target.value === 'true' })}>
-                <option value="true">Свободен</option>
-                <option value="false">Арендован</option>
-              </select>
-            </div>
-            <div className="modal-actions">
-              <button className="modal-cancel" onClick={() => setShowOfficeModal(false)}>
-                <X size={14} style={{ marginRight: '4px' }} />
-                Отмена
-              </button>
-              <button className="modal-save" onClick={handleSaveOffice}>
-                <Save size={14} style={{ marginRight: '4px' }} />
-                Сохранить
-              </button>
-            </div>
-          </div>
-        </div>
+      {showOfficeEditor && (
+        <OfficeEditor
+          office={editingOffice}
+          onClose={() => setShowOfficeEditor(false)}
+          onSave={handleSaveOffice}
+        />
       )}
     </div>
   );

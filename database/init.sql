@@ -141,7 +141,26 @@ CREATE TABLE IF NOT EXISTS favorites (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, office_id)
 );
-Ё
+-- ============================================================
+-- ТАБЛИЦА ДЛЯ ИЗОБРАЖЕНИЙ ОФИСОВ
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS office_images (
+    id SERIAL PRIMARY KEY,
+    office_id INTEGER NOT NULL REFERENCES offices(id) ON DELETE CASCADE,
+    image_url VARCHAR(500) NOT NULL,
+    file_name VARCHAR(255),
+    file_size INTEGER,
+    mime_type VARCHAR(100),
+    is_primary BOOLEAN DEFAULT FALSE,
+    sort_order INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Индексы для office_images
+CREATE INDEX IF NOT EXISTS idx_office_images_office_id ON office_images(office_id);
+CREATE INDEX IF NOT EXISTS idx_office_images_primary ON office_images(office_id, is_primary) WHERE is_primary = TRUE;
+CREATE INDEX IF NOT EXISTS idx_office_images_order ON office_images(office_id, sort_order);
 -- ============================================================
 -- ИНДЕКСЫ ДЛЯ ОПТИМИЗАЦИИ ЗАПРОСОВ
 -- ============================================================
@@ -199,3 +218,45 @@ CREATE INDEX IF NOT EXISTS idx_offices_free_only ON offices(id, office_number, f
 CREATE INDEX IF NOT EXISTS idx_contracts_active_only ON contracts(office_id, user_id, end_date) WHERE status_id = 4;
 CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_office_id ON favorites(office_id);
+
+-- Выполните в БД для настройки автоочистки
+
+-- Функция для автоматической очистки старого аудита
+CREATE OR REPLACE FUNCTION clean_audit_log()
+RETURNS void AS $$
+DECLARE
+    row_count INTEGER;
+    total_size BIGINT;
+BEGIN
+    -- 1. Получаем количество записей
+    SELECT COUNT(*) INTO row_count FROM audit_log;
+    
+    -- 2. Получаем размер таблицы в MB
+    SELECT pg_total_relation_size('audit_log') / 1024 / 1024 INTO total_size;
+    
+    -- 3. Если больше 100 000 записей или 200MB - удаляем старые
+    IF row_count > 100000 OR total_size > 200 THEN
+        -- Удаляем записи старше 90 дней (оставляем только свежие)
+        DELETE FROM audit_log 
+        WHERE created_at < NOW() - INTERVAL '90 days';
+        
+        -- Если всё ещё много - оставляем только 50 000 последних
+        GET DIAGNOSTICS row_count = ROW_COUNT;
+        IF row_count > 50000 THEN
+            DELETE FROM audit_log 
+            WHERE id NOT IN (
+                SELECT id FROM audit_log 
+                ORDER BY created_at DESC 
+                LIMIT 50000
+            );
+        END IF;
+        
+        RAISE NOTICE 'Audit log cleaned: removed %, now size is % records', 
+                     row_count, (SELECT COUNT(*) FROM audit_log);
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Запускаем очистку каждый день в 3:00 (через pg_cron или внешний планировщик)
+-- Если pg_cron установлен:
+-- SELECT cron.schedule('clean-audit', '0 3 * * *', 'SELECT clean_audit_log();');

@@ -19,6 +19,7 @@ export const FavoritesProvider = ({ children }) => {
   const loadFavorites = async () => {
     try {
       const data = await getFavorites();
+      console.log('Загружено избранное:', data); // ← добавь для отладки
       setFavorites(data);
     } catch (error) {
       console.error('Ошибка загрузки избранного:', error);

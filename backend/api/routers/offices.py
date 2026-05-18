@@ -14,6 +14,10 @@ from api.models.office import OfficeCreate, OfficeUpdate, OfficeResponse
 from api.rate_limiter import limiter, RATE_LIMITS
 # from api.security import get_current_user_from_cookie as get_current_user
 from api.security import get_current_user 
+from api.models.office_image import OfficeImageResponse
+from api.utils.audit_logger import log_insert, log_update, log_delete
+import logging
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/offices", tags=["Offices"])
 # security = HTTPBearer(auto_error=False)
@@ -65,6 +69,19 @@ def require_admin_or_manager(current_user: dict):
 # ===================================================================
 # ENDPOINTS
 # ===================================================================
+# ===================================================================
+# ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ML ПРОГНОЗА
+# ===================================================================
+
+def get_ml_probability(conn, office_id: int) -> float:
+    try:
+        from api.ml_models.office_rental_prediction import rental_predictor
+        result = rental_predictor.predict_probability(conn, office_id)
+        if "error" not in result and "probability" in result:
+            return result["probability"]
+    except Exception as e:
+        logger.warning(f"ML prediction failed for office {office_id}: {e}")
+    return None
 
 @router.get("", response_model=List[OfficeResponse])
 def get_offices(
@@ -73,78 +90,92 @@ def get_offices(
     max_price: Optional[float] = Query(None, description="Максимальная цена"),
     is_free: Optional[bool] = Query(None, description="Только свободные офисы")
 ):
-    """
-    Каталог офисов — фильтрация и поиск
-    
-    Доступ: Все (чтение без авторизации)
-    
-    Args:
-        floor: Фильтр по этажу (опционально)
-        max_price: Максимальная цена аренды (опционально)
-        is_free: Фильтр по статусу доступности (опционально)
-    
-    Returns:
-        List[OfficeResponse]: Список офисов с применёнными фильтрами
-    
-    Example:
-        GET /api/offices?floor=2&max_price=30000&is_free=true
-    """
     conn = get_db()
     cursor = conn.cursor()
     
     try:
+        # Основной запрос БЕЗ комментариев
         query = """
-            SELECT id, office_number, floor, area_sqm, price_per_month, 
-                   description, amenities, is_free, created_at 
-            FROM offices WHERE 1=1
+            SELECT 
+                o.id, o.office_number, o.floor, o.area_sqm, o.price_per_month, 
+                o.description, o.amenities, o.is_free, o.created_at,
+                COALESCE(
+                    (SELECT COUNT(*) FROM office_views 
+                    WHERE office_id = o.id AND viewed_at > NOW() - INTERVAL '30 days'), 0
+                ) as views_30d,
+                COALESCE(
+                    (SELECT COUNT(*) FROM applications WHERE office_id = o.id), 0
+                ) as applications_count,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'id', img.id,
+                            'image_url', img.image_url,
+                            'is_primary', img.is_primary,
+                            'sort_order', img.sort_order
+                        )
+                    ) FILTER (WHERE img.id IS NOT NULL),
+                    '[]'
+                ) as images
+            FROM offices o
+            LEFT JOIN office_images img ON o.id = img.office_id
+            WHERE 1=1
         """
         params = []
         
         if floor is not None:
-            query += " AND floor = %s"
+            query += " AND o.floor = %s"
             params.append(floor)
         
         if max_price is not None:
-            query += " AND price_per_month <= %s"
+            query += " AND o.price_per_month <= %s"
             params.append(max_price)
         
-        # Правильная обработка boolean
         if is_free is not None:
-            query += " AND is_free = %s"
-            params.append(bool(is_free))
+            query += " AND o.is_free = %s"
+            params.append(is_free)
         
-        query += " ORDER BY floor, office_number"
+        query += " GROUP BY o.id ORDER BY o.floor, o.office_number"
         
         cursor.execute(query, params)
         rows = cursor.fetchall()
         
         result = []
         for r in rows:
-            # Безопасный парсинг JSON
             try:
                 amenities_data = json.loads(r['amenities']) if r['amenities'] else None
-            except (json.JSONDecodeError, TypeError, Exception):
+            except:
                 amenities_data = None
             
-            result.append(
-                OfficeResponse(
-                    id=r['id'],
-                    office_number=r['office_number'],
-                    floor=r['floor'],
-                    area_sqm=float(r['area_sqm']),
-                    price_per_month=float(r['price_per_month']),
-                    description=r['description'] if r['description'] else None,
-                    amenities=amenities_data,
-                    is_free=bool(r['is_free']),
-                    created_at=r['created_at']
-                )
-            )
+            images_data = []
+            if r['images'] and r['images'] != '[]':
+                try:
+                    images_data = json.loads(r['images']) if isinstance(r['images'], str) else r['images']
+                except:
+                    images_data = []
+            
+            ml_prob = get_ml_probability(conn, r['id'])
+            
+            result.append(OfficeResponse(
+                id=r['id'],
+                office_number=r['office_number'],
+                floor=r['floor'],
+                area_sqm=float(r['area_sqm']),
+                price_per_month=float(r['price_per_month']),
+                description=r['description'] if r['description'] else None,
+                amenities=amenities_data,
+                is_free=bool(r['is_free']),
+                created_at=r['created_at'],
+                images=[OfficeImageResponse(**img) for img in images_data],
+                views_30d=r.get('views_30d', 0) or 0,
+                applications_count=r.get('applications_count', 0) or 0,
+                ml_probability=ml_prob
+            ))
         
         return result
-    
     except Exception as e:
-        # Показываем ошибку для дебага
-        raise HTTPException(status_code=500, detail=f"Ошибка: {str(e)}")
+        logger.error(f"Error in get_offices: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conn.close()
@@ -177,10 +208,10 @@ def create_office(request: Request, office: OfficeCreate, current_user: dict = D
     try:
         cursor.execute(
             """INSERT INTO offices (office_number, floor, area_sqm, price_per_month, 
-                                   description, amenities, is_free) 
-               VALUES (%s, %s, %s, %s, %s, %s, %s) 
-               RETURNING id, office_number, floor, area_sqm, price_per_month, 
-                         description, amenities, is_free, created_at""",
+                                description, amenities, is_free) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s) 
+            RETURNING id, office_number, floor, area_sqm, price_per_month, 
+                    description, amenities, is_free, created_at""",
             (
                 office.office_number,
                 office.floor,
@@ -192,12 +223,27 @@ def create_office(request: Request, office: OfficeCreate, current_user: dict = D
             )
         )
         row = cursor.fetchone()
+        
+        # АУДИТ: логируем создание офиса
+        log_insert(
+            user_id=current_user.get("sub"),
+            table_name="offices",
+            record_id=row['id'],
+            new_values={
+                "office_number": row['office_number'],
+                "floor": row['floor'],
+                "area_sqm": float(row['area_sqm']),
+                "price_per_month": float(row['price_per_month']),
+                "is_free": row['is_free']
+            },
+            conn=conn
+        )
+        
         conn.commit()
         
-        # Безопасный парсинг JSON
         try:
             amenities_data = json.loads(row['amenities']) if row['amenities'] else None
-        except (json.JSONDecodeError, TypeError, Exception):
+        except:
             amenities_data = None
         
         return OfficeResponse(
@@ -211,8 +257,6 @@ def create_office(request: Request, office: OfficeCreate, current_user: dict = D
             is_free=bool(row['is_free']),
             created_at=row['created_at']
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка: {str(e)}")
     finally:
         cursor.close()
         conn.close()
@@ -304,10 +348,12 @@ def update_office(request: Request, office_id: int, office: OfficeUpdate, curren
     try:
         updates = []
         params = []
-        
+        changed_fields = {} 
+
         if office.office_number is not None:
             updates.append("office_number = %s")
             params.append(office.office_number)
+            changed_fields['office_number'] = {'old': old_data['office_number'], 'new': office.office_number}
         
         if office.floor is not None:
             updates.append("floor = %s")
@@ -352,6 +398,19 @@ def update_office(request: Request, office_id: int, office: OfficeUpdate, curren
             raise HTTPException(status_code=404, detail="Офис не найден")
         
         conn.commit()
+
+        if changed_fields:
+            log_update(
+                user_id=current_user.get("sub"),
+                table_name="offices",
+                record_id=office_id,
+                old_values={k: v['old'] for k, v in changed_fields.items() if 'old' in v},
+                new_values={k: v['new'] for k, v in changed_fields.items() if 'new' in v},
+                conn=conn
+            )
+        
+        conn.commit()
+
         
         # Безопасный парсинг JSON
         try:
@@ -376,6 +435,17 @@ def update_office(request: Request, office_id: int, office: OfficeUpdate, curren
         cursor.close()
         conn.close()
 
+def get_office_before_update(conn, office_id: int) -> dict:
+    """Получить текущие данные офиса для аудита"""
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT office_number, floor, area_sqm, price_per_month, is_free, description FROM offices WHERE id = %s",
+            (office_id,)
+        )
+        return cursor.fetchone()
+    finally:
+        cursor.close()
 
 @router.delete("/{office_id}", response_model=dict)
 @limiter.limit(RATE_LIMITS["authenticated"])
@@ -403,16 +473,35 @@ def delete_office(request: Request, office_id: int, current_user: dict = Depends
     cursor = conn.cursor()
     
     try:
+        # Добавьте эту функцию перед её использованием
+        # Получаем данные для аудита перед удалением
+        old_data = get_office_before_update(conn, office_id)
+        if not old_data:
+            raise HTTPException(status_code=404, detail="Офис не найден")
+        
         cursor.execute("DELETE FROM offices WHERE id = %s RETURNING id", (office_id,))
         
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Офис не найден")
         
+        # АУДИТ: логируем удаление
+        log_delete(
+            user_id=current_user.get("sub"),
+            table_name="offices",
+            record_id=office_id,
+            old_values={
+                "office_number": old_data['office_number'],
+                "floor": old_data['floor'],
+                "area_sqm": float(old_data['area_sqm']),
+                "price_per_month": float(old_data['price_per_month']),
+                "is_free": old_data['is_free']
+            },
+            conn=conn
+        )
+        
         conn.commit()
         
         return {"message": f"Офис {office_id} удалён"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка: {str(e)}")
     finally:
         cursor.close()
         conn.close()
@@ -468,6 +557,52 @@ def get_offices_stats(request: Request, current_user: dict = Depends(get_current
             "total_potential_income": float(total_income),
             "average_office_income": round(float(avg_income), 2)
         }
+    finally:
+        cursor.close()
+        conn.close()
+
+@router.post("/{office_id}/track-view")
+@limiter.limit(RATE_LIMITS["authenticated"])
+def track_office_view(
+    request: Request,
+    office_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Отслеживание просмотра офиса пользователем
+    Доступ: Все авторизованные
+    """
+    user_id = current_user.get("sub")
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        # Проверяем существование офиса
+        cursor.execute("SELECT id FROM offices WHERE id = %s", (office_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Офис не найден")
+        
+        # Добавляем запись в office_views
+        cursor.execute("""
+            INSERT INTO office_views (user_id, office_id, viewed_at)
+            VALUES (%s, %s, NOW())
+        """, (user_id, office_id))
+        
+        # ⚠️ УДАЛЯЕМ ЭТОТ БЛОК - колонки views_count нет в таблице!
+        # cursor.execute("""
+        #     UPDATE offices 
+        #     SET views_count = COALESCE(views_count, 0) + 1
+        #     WHERE id = %s
+        # """, (office_id,))
+        
+        conn.commit()
+        
+        return {"message": "Просмотр зафиксирован"}
+        
+    except Exception as e:
+        logger.error(f"Error tracking view: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         cursor.close()
         conn.close()
