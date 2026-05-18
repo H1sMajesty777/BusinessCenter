@@ -1,5 +1,3 @@
-// frontend/src/pages/OfficeDetailPage.jsx
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +9,8 @@ import {
   Loader2, CalendarCheck, X, CheckCircle,
   Wifi, Coffee, Car, Shield, Clock, Users,
   TrendingUp, TrendingDown, Minus, Zap, Sparkles,
-  ArrowLeft, Share2, Copy, FileText, MessageCircle
+  ArrowLeft, Share2, Copy, FileText, MessageCircle,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import '../styles/officeDetail.css';
 import { getFeatureInfo } from '../utils/featureMapping';
@@ -36,11 +35,28 @@ const OfficeDetailPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [applicationSuccess, setApplicationSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const isFav = favorites?.some(f => f.office_id === parseInt(id) || f.id === parseInt(id)) || false;
   const isClient = user?.role_id === 3;
   const isManagerOrAdmin = user?.role_id === 1 || user?.role_id === 2;
   const [showEditor, setShowEditor] = useState(false);
+
+  const images = office?.images || [];
+  const hasImages = images.length > 0;
+  const currentImage = hasImages ? images[currentImageIndex] : null;
+
+  const nextImage = () => {
+    if (images.length > 0) {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (images.length > 0) {
+      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -52,6 +68,7 @@ const OfficeDetailPage = () => {
         ]);
         setOffice(officeData.data);
         setForecast(forecastData.data);
+        setCurrentImageIndex(0);
         
         if (isClient) {
           await api.post(`/offices/${id}/track-view`).catch(e => console.log('Track view error:', e));
@@ -105,7 +122,7 @@ const OfficeDetailPage = () => {
   const probability = (forecast?.probability || 0) * 100;
   const probabilityPercent = Math.round(probability);
 
-  const amenities = [
+  const amenitiesList = [
     { icon: Wifi, label: 'Wi-Fi', available: true },
     { icon: Coffee, label: 'Кухня', available: true },
     { icon: Car, label: 'Парковка', available: true },
@@ -113,6 +130,7 @@ const OfficeDetailPage = () => {
     { icon: Clock, label: 'Круглосуточно', available: true },
     { icon: Users, label: 'Конференц-зал', available: office?.area_sqm > 50 }
   ];
+  
   const handleEditOffice = () => {
     setShowEditor(true);
   };
@@ -146,12 +164,23 @@ const OfficeDetailPage = () => {
 
   return (
     <div className="office-detail-new">
-      {/* Hero секция с градиентом */}
+      {/* Hero секция с изображением */}
       <div className="detail-hero">
         <div className="detail-hero-bg">
           <div className="hero-gradient"></div>
           <div className="hero-pattern"></div>
         </div>
+        
+        {/* Фоновое изображение офиса */}
+        {hasImages && (
+          <div className="hero-background-image">
+            <img 
+              src={`http://localhost:8000${images[0].image_url}`}
+              alt={`Офис ${office.office_number}`}
+            />
+            <div className="hero-overlay"></div>
+          </div>
+        )}
         
         <div className="detail-hero-content">
           <button className="back-button" onClick={() => navigate('/dashboard')}>
@@ -223,29 +252,63 @@ const OfficeDetailPage = () => {
         </div>
       </div>
 
-      {/* Основной контент */}
+      {/* Остальной контент без изменений... */}
       <div className="detail-content">
         <div className="content-grid">
-          {/* Левая колонка */}
           <div className="content-left">
-            {/* Изображения */}
+            {/* Секция изображений с каруселью */}
             <div className="image-section">
               <div className="main-image">
-                <div className="image-placeholder gradient-1">
-                  <Building2 size={80} />
-                  <span>Офис {office.office_number}</span>
-                </div>
-              </div>
-              <div className="image-thumbnails">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className={`thumbnail gradient-${(i % 5) + 1}`}>
-                    <Building2 size={24} />
+                {hasImages ? (
+                  <>
+                    <img 
+                      src={`http://localhost:8000${currentImage.image_url}`}
+                      alt={`Офис ${office.office_number}`}
+                      className="detail-main-img"
+                    />
+                    {images.length > 1 && (
+                      <>
+                        <button className="detail-slider-prev" onClick={prevImage}>
+                          <ChevronLeft size={24} />
+                        </button>
+                        <button className="detail-slider-next" onClick={nextImage}>
+                          <ChevronRight size={24} />
+                        </button>
+                        <div className="detail-slider-dots">
+                          {images.map((_, idx) => (
+                            <span 
+                              key={idx} 
+                              className={`detail-dot ${idx === currentImageIndex ? 'active' : ''}`}
+                              onClick={() => setCurrentImageIndex(idx)}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <div className="image-placeholder gradient-1">
+                    <Building2 size={80} />
+                    <span>Офис {office.office_number}</span>
                   </div>
-                ))}
+                )}
               </div>
+              
+              {hasImages && images.length > 1 && (
+                <div className="image-thumbnails">
+                  {images.map((img, idx) => (
+                    <div 
+                      key={img.id} 
+                      className={`thumbnail ${idx === currentImageIndex ? 'active' : ''}`}
+                      onClick={() => setCurrentImageIndex(idx)}
+                    >
+                      <img src={`http://localhost:8000${img.image_url}`} alt={`Фото ${idx + 1}`} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Описание */}
             <div className="description-section">
               <h3>Описание помещения</h3>
               <p>
@@ -255,11 +318,10 @@ const OfficeDetailPage = () => {
               </p>
             </div>
 
-            {/* Удобства */}
             <div className="amenities-section">
               <h3>Удобства и инфраструктура</h3>
               <div className="amenities-grid">
-                {amenities.map((item, idx) => {
+                {amenitiesList.map((item, idx) => {
                   const Icon = item.icon;
                   return (
                     <div key={idx} className={`amenity-item ${item.available ? 'available' : 'unavailable'}`}>
@@ -273,7 +335,6 @@ const OfficeDetailPage = () => {
             </div>
           </div>
 
-          {/* Правая колонка */}
           <div className="content-right">
             {/* Заявка */}
             <div className="request-card">
@@ -308,7 +369,7 @@ const OfficeDetailPage = () => {
               </div>
             </div>
 
-            {/* AI Аналитика (только для менеджеров) */}
+            {/* AI Аналитика */}
             {isManagerOrAdmin && forecast && (
               <div className="ai-card">
                 <div className="ai-header">
@@ -354,7 +415,6 @@ const OfficeDetailPage = () => {
                     <h4>Ключевые факторы прогноза</h4>
                     {forecast.top_factors.slice(0, 4).map((factor, idx) => {
                       const info = getFeatureInfo(factor.feature);
-                      // ВАЖНО: умножаем на 100, а не на 1000!
                       const importancePercent = Math.min(100, Math.round(factor.importance * 100));
                       return (
                         <div key={idx} className="ai-factor">
@@ -376,7 +436,6 @@ const OfficeDetailPage = () => {
         </div>
       </div>
 
-      {/* Модальное окно */}
       {showApplicationForm && (
         <div className="detail-modal" onClick={() => setShowApplicationForm(false)}>
           <div className="detail-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -450,6 +509,7 @@ const OfficeDetailPage = () => {
           </div>
         </div>
       )}
+      
       {showEditor && (
         <OfficeEditor
           office={office}

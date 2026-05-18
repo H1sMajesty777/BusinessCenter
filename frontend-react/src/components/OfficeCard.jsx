@@ -1,37 +1,80 @@
-// frontend/src/components/OfficeCard.jsx
-
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useFavorites } from '../contexts/FavoritesContext';
 import { 
   MapPin, Ruler, DollarSign, Eye, Heart, 
   TrendingUp, TrendingDown, Minus, Users, ChevronRight,
-  Sparkles
+  Sparkles, Building2, ChevronLeft, ChevronRight as ChevronRightIcon
 } from 'lucide-react';
-import ImageSlider from './ImageSlider';
-import { getOfficeImages } from '../utils/mockImages';
 import '../styles/officeCard.css';
 
 const OfficeCard = ({ office }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { favorites, toggleFavorite } = useFavorites();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   if (!office || !office.id) return null;
   
   const isFav = favorites.some(f => f.office_id === office.id || f.id === office.id);
-  const images = getOfficeImages(office.id);
   const pricePerSqm = office.area_sqm ? Math.round(office.price_per_month / office.area_sqm) : 0;
   const isClient = user?.role_id === 3;
   const isManagerOrAdmin = user?.role_id === 1 || user?.role_id === 2;
   
-  // Реальные данные из БД (без моков!)
   const viewsCount = office.views_30d || office.views_count || 0;
   const applicationsCount = office.applications_count || 0;
   const mlProbability = office.ml_probability || null;
   
-  // Расчет спроса на основе реальных просмотров
+  const images = office.images || [];
+  const hasImages = images.length > 0;
+  
+  // Автоплей каждые 4 секунды с анимацией
+  useEffect(() => {
+    if (!hasImages || images.length <= 1) return;
+    
+    if (!isHovered) {
+      const interval = setInterval(() => {
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setCurrentImageIndex((prev) => (prev + 1) % images.length);
+          setTimeout(() => setIsTransitioning(false), 50);
+        }, 150);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [hasImages, images.length, isHovered]);
+  
+  const nextImage = (e) => {
+    e.stopPropagation();
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+      setTimeout(() => setIsTransitioning(false), 50);
+    }, 150);
+  };
+  
+  const prevImage = (e) => {
+    e.stopPropagation();
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+      setTimeout(() => setIsTransitioning(false), 50);
+    }, 150);
+  };
+  
+  const goToSlide = (index, e) => {
+    e.stopPropagation();
+    if (index === currentImageIndex) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentImageIndex(index);
+      setTimeout(() => setIsTransitioning(false), 50);
+    }, 150);
+  };
+  
   const getDemandStatus = () => {
     if (viewsCount > 30) return { label: 'Очень высокий', color: '#22c55e', icon: TrendingUp };
     if (viewsCount > 15) return { label: 'Высокий', color: '#3b82f6', icon: TrendingUp };
@@ -50,8 +93,12 @@ const OfficeCard = ({ office }) => {
   };
 
   return (
-    <div className="office-card" onClick={handleCardClick}>
-      {/* AI-бейдж — ТОЛЬКО ДЛЯ МЕНЕДЖЕРОВ И АДМИНОВ (если есть данные) */}
+    <div 
+      className="office-card" 
+      onClick={handleCardClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {isManagerOrAdmin && mlProbability && (
         <div className="office-card-ai-badge">
           <Sparkles size={12} />
@@ -60,7 +107,52 @@ const OfficeCard = ({ office }) => {
       )}
       
       <div className="office-card-image">
-        <ImageSlider images={images} officeNumber={office.office_number} />
+        {hasImages ? (
+          <>
+            <div className="image-slider-container">
+              {images.map((img, idx) => (
+                <div 
+                  key={img.id}
+                  className={`image-slide ${idx === currentImageIndex ? 'active' : ''} ${isTransitioning ? 'transitioning' : ''}`}
+                >
+                  <img 
+                    src={`http://localhost:8000${img.image_url}`}
+                    alt={`Офис ${office.office_number}`}
+                    className="office-card-img"
+                    onError={(e) => {
+                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="1"%3E%3Crect x="2" y="2" width="20" height="20" rx="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="2.5"%3E%3C/circle%3E%3Cpath d="M21 15l-5-4-3 3-4-4-5 5"%3E%3C/path%3E%3C/svg%3E';
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+            {images.length > 1 && (
+              <>
+                <button className="slider-arrow-prev" onClick={prevImage}>
+                  <ChevronLeft size={20} />
+                </button>
+                <button className="slider-arrow-next" onClick={nextImage}>
+                  <ChevronRightIcon size={20} />
+                </button>
+                <div className="slider-dots">
+                  {images.map((_, idx) => (
+                    <span 
+                      key={idx} 
+                      className={`dot ${idx === currentImageIndex ? 'active' : ''}`}
+                      onClick={(e) => goToSlide(idx, e)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="image-placeholder">
+            <Building2 size={48} />
+            <span>Нет фото</span>
+          </div>
+        )}
+        
         <button 
           className={`office-card-favorite ${isFav ? 'active' : ''}`}
           onClick={handleFavoriteClick}
@@ -116,7 +208,6 @@ const OfficeCard = ({ office }) => {
           </div>
         </div>
         
-        {/* AI-прогноз — ТОЛЬКО ДЛЯ МЕНЕДЖЕРОВ И АДМИНОВ (если есть данные) */}
         {isManagerOrAdmin && mlProbability && (
           <div className="office-card-forecast">
             <div className="forecast-header">
@@ -127,10 +218,7 @@ const OfficeCard = ({ office }) => {
               <span className="forecast-value">{Math.round(mlProbability * 100)}%</span>
             </div>
             <div className="forecast-bar">
-              <div 
-                className="forecast-fill" 
-                style={{ width: `${mlProbability * 100}%` }}
-              />
+              <div className="forecast-fill" style={{ width: `${mlProbability * 100}%` }} />
             </div>
           </div>
         )}

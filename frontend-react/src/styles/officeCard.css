@@ -455,3 +455,268 @@
     width: 100%;
   }
 }
+/* frontend/src/styles/officeCard.css - добавь в конец файла */
+
+.office-card-image {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.office-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.office-card:hover .office-card-img {
+  transform: scale(1.05);
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #94a3b8;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.image-placeholder svg {
+  opacity: 0.5;
+}
+
+.image-placeholder span {
+  font-size: 14px;
+  font-weight: 500;
+}
+.office-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.office-card:hover .office-card-img {
+  transform: scale(1.05);
+}
+
+.image-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #94a3b8;
+  gap: 12px;
+}
+.slider-arrow-prev,
+.slider-arrow-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.office-card:hover .slider-arrow-prev,
+.office-card:hover .slider-arrow-next {
+  opacity: 1;
+}
+
+.slider-arrow-prev {
+  left: 12px;
+}
+
+.slider-arrow-next {
+  right: 12px;
+}
+
+.slider-arrow-prev:hover,
+.slider-arrow-next:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.slider-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.slider-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.slider-dots .dot.active {
+  background: white;
+  width: 20px;
+  border-radius: 10px;
+}
+
+.slider-dots .dot:hover {
+  transform: scale(1.2);
+}
+
+.office-card-image {
+  position: relative;
+  overflow: hidden;
+  background: #1a1a2e;
+}
+/* Контейнер слайдера */
+.image-slider-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Слайды */
+.image-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 1;
+}
+
+.image-slide.active {
+  opacity: 1;
+  z-index: 2;
+}
+
+.image-slide.transitioning {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Анимация для появления */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.image-slide.active img {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Стрелки */
+.slider-arrow-prev,
+.slider-arrow-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.office-card:hover .slider-arrow-prev,
+.office-card:hover .slider-arrow-next {
+  opacity: 1;
+}
+
+.slider-arrow-prev:hover,
+.slider-arrow-next:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.slider-arrow-prev {
+  left: 12px;
+}
+
+.slider-arrow-next {
+  right: 12px;
+}
+
+/* Точки */
+.slider-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 6px 12px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.office-card:hover .slider-dots {
+  opacity: 1;
+}
+
+.slider-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slider-dots .dot:hover {
+  transform: scale(1.2);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.slider-dots .dot.active {
+  background: white;
+  width: 20px;
+  border-radius: 10px;
+}
