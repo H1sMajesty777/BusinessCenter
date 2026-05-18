@@ -4,17 +4,15 @@ from datetime import datetime, date
 
 
 class ContractCreate(BaseModel):
-    """
-    Модель для создания договора аренды
-    
-    """
     application_id: int
     user_id: int
     office_id: int
     start_date: date
     end_date: date
     total_amount: float
-    status_id: int = 4  # 4 = active (действует)
+    monthly_amount: Optional[float] = None  # ← если не указана, берётся из офиса
+    deposit_amount: Optional[float] = None
+    special_conditions: Optional[str] = None
 
 
 class ContractResponse(BaseModel):

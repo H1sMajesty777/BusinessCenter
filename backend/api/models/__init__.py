@@ -35,21 +35,6 @@ class OfficeUpdate(BaseModel):
     amenities: Optional[Dict[str, Any]] = Field(None)
     is_free: Optional[bool] = Field(None)
 
-class OfficeResponse(BaseModel):
-    id: int
-    office_number: str
-    floor: int
-    area_sqm: float
-    price_per_month: float
-    description: Optional[str] = None
-    amenities: Optional[Dict[str, Any]] = None
-    is_free: bool
-    created_at: Optional[datetime] = None
-    images: List[OfficeImageResponse] = []
-    
-    class Config:
-        from_attributes = True
-
 # ============================================
 # ЭКСПОРТ ВСЕХ МОДЕЛЕЙ
 # ============================================

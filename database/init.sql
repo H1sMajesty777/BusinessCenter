@@ -105,6 +105,15 @@ CREATE TABLE IF NOT EXISTS contracts (
     signed_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+INSERT INTO statuses (code, group_name, name) 
+VALUES ('contract_created', 'application', 'Договор создан')
+ON CONFLICT (code, group_name) DO NOTHING;
+
+-- Добавить колонки для удобства
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_number INT;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+
 CREATE TABLE IF NOT EXISTS payments (
     id SERIAL PRIMARY KEY,
     contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,

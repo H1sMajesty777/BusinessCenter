@@ -110,9 +110,11 @@ def get_offices(
                     json_agg(
                         json_build_object(
                             'id', img.id,
+                            'office_id', img.office_id,           -- ← ДОБАВИТЬ!
                             'image_url', img.image_url,
                             'is_primary', img.is_primary,
-                            'sort_order', img.sort_order
+                            'sort_order', img.sort_order,
+                            'created_at', img.created_at          -- ← ДОБАВИТЬ!
                         )
                     ) FILTER (WHERE img.id IS NOT NULL),
                     '[]'
@@ -321,102 +323,55 @@ def get_office(request: Request, office_id: int):
 @router.put("/{office_id}", response_model=OfficeResponse)
 @limiter.limit(RATE_LIMITS["authenticated"])
 def update_office(request: Request, office_id: int, office: OfficeUpdate, current_user: dict = Depends(get_current_user)):
-    """
-    Обновление данных офиса
-    
-    Доступ: Админ/Менеджер (role_id 1 или 2)
-    
-    Args:
-        office_id: ID офиса для обновления
-        office: Новые данные офиса (только изменённые поля)
-        current_user: Текущий пользователь из токена
-    
-    Returns:
-        OfficeResponse: Обновлённые данные офиса
-    
-    Raises:
-        HTTPException: 400 если нет данных для обновления
-        HTTPException: 403 если роль не admin/manager
-        HTTPException: 404 если офис не найден
-        HTTPException: 500 если ошибка при обновлении
-    """
     require_admin_or_manager(current_user)
     
     conn = get_db()
     cursor = conn.cursor()
     
     try:
+        # Проверяем существование
+        cursor.execute("SELECT id FROM offices WHERE id = %s", (office_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Офис не найден")
+        
+        # Собираем только те поля, которые переданы
+        update_data = office.model_dump(exclude_none=True)
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="Нет данных для обновления")
+        
+        # Преобразуем amenities в JSON если есть
+        if 'amenities' in update_data and update_data['amenities'] is not None:
+            update_data['amenities'] = json.dumps(update_data['amenities'], ensure_ascii=False)
+        
+        # Строим запрос динамически
         updates = []
         params = []
-        changed_fields = {} 
-
-        if office.office_number is not None:
-            updates.append("office_number = %s")
-            params.append(office.office_number)
-            changed_fields['office_number'] = {'old': old_data['office_number'], 'new': office.office_number}
-        
-        if office.floor is not None:
-            updates.append("floor = %s")
-            params.append(office.floor)
-        
-        if office.area_sqm is not None:
-            updates.append("area_sqm = %s")
-            params.append(office.area_sqm)
-        
-        if office.price_per_month is not None:
-            updates.append("price_per_month = %s")
-            params.append(office.price_per_month)
-        
-        if office.description is not None:
-            updates.append("description = %s")
-            params.append(office.description)
-        
-        if office.amenities is not None:
-            updates.append("amenities = %s")
-            params.append(json.dumps(office.amenities, ensure_ascii=False))
-        
-        if office.is_free is not None:
-            updates.append("is_free = %s")
-            params.append(bool(office.is_free))
-        
-        if not updates:
-            raise HTTPException(status_code=400, detail="Нет данных для обновления")
+        for key, value in update_data.items():
+            updates.append(f"{key} = %s")
+            params.append(value)
         
         params.append(office_id)
         
-        cursor.execute(
-            f"""UPDATE offices SET {', '.join(updates)} 
-                WHERE id = %s 
-                RETURNING id, office_number, floor, area_sqm, price_per_month, 
-                          description, amenities, is_free, created_at""",
-            tuple(params)
-        )
+        query = f"""
+            UPDATE offices 
+            SET {', '.join(updates)} 
+            WHERE id = %s 
+            RETURNING id, office_number, floor, area_sqm, price_per_month, 
+                      description, amenities, is_free, created_at
+        """
         
+        cursor.execute(query, params)
         row = cursor.fetchone()
-        
-        if not row:
-            raise HTTPException(status_code=404, detail="Офис не найден")
-        
         conn.commit()
-
-        if changed_fields:
-            log_update(
-                user_id=current_user.get("sub"),
-                table_name="offices",
-                record_id=office_id,
-                old_values={k: v['old'] for k, v in changed_fields.items() if 'old' in v},
-                new_values={k: v['new'] for k, v in changed_fields.items() if 'new' in v},
-                conn=conn
-            )
         
-        conn.commit()
-
-        
-        # Безопасный парсинг JSON
-        try:
-            amenities_data = json.loads(row['amenities']) if row['amenities'] else None
-        except (json.JSONDecodeError, TypeError, Exception):
-            amenities_data = None
+        # Парсим amenities обратно
+        amenities_data = None
+        if row['amenities']:
+            try:
+                amenities_data = json.loads(row['amenities'])
+            except:
+                pass
         
         return OfficeResponse(
             id=row['id'],
@@ -424,12 +379,27 @@ def update_office(request: Request, office_id: int, office: OfficeUpdate, curren
             floor=row['floor'],
             area_sqm=float(row['area_sqm']),
             price_per_month=float(row['price_per_month']),
-            description=row['description'] if row['description'] else None,
+            description=row['description'],
             amenities=amenities_data,
-            is_free=bool(row['is_free']),
+            is_free=row['is_free'],
             created_at=row['created_at']
         )
+        
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        import sys
+        print("=" * 80)
+        print("❌ КРИТИЧЕСКАЯ ОШИБКА В UPDATE_OFFICE:")
+        print(f"Office ID: {office_id}")
+        print(f"Данные для обновления: {update_data if 'update_data' in locals() else 'N/A'}")
+        print(f"Тип ошибки: {type(e).__name__}")
+        print(f"Текст: {str(e)}")
+        print("\n📋 ПОЛНЫЙ СТЕК ВЫЗОВОВ:")
+        traceback.print_exc(file=sys.stdout)
+        print("=" * 80)
+        raise HTTPException(status_code=500, detail=f"Ошибка обновления офиса: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка: {str(e)}")
     finally:
         cursor.close()

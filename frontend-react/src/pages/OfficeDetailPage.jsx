@@ -67,6 +67,12 @@ const OfficeDetailPage = () => {
           isManagerOrAdmin ? api.get(`/ai/rental-prediction/office/${id}`).catch(() => ({ data: null })) : Promise.resolve({ data: null })
         ]);
         setOffice(officeData.data);
+        try {
+          const imagesResponse = await api.get(`/office-images/office/${id}`);
+          setOffice(prev => ({ ...prev, images: imagesResponse.data || [] }));
+        } catch (err) {
+          console.error('Ошибка загрузки изображений:', err);
+        }
         setForecast(forecastData.data);
         setCurrentImageIndex(0);
         
@@ -262,9 +268,12 @@ const OfficeDetailPage = () => {
                 {hasImages ? (
                   <>
                     <img 
-                      src={`http://localhost:8000${currentImage.image_url}`}
+                      src={`http://localhost:8000${images[currentImageIndex].image_url}`}
                       alt={`Офис ${office.office_number}`}
                       className="detail-main-img"
+                      onError={(e) => {
+                        e.target.src = '/placeholder-image.jpg';
+                      }}
                     />
                     {images.length > 1 && (
                       <>
@@ -302,7 +311,13 @@ const OfficeDetailPage = () => {
                       className={`thumbnail ${idx === currentImageIndex ? 'active' : ''}`}
                       onClick={() => setCurrentImageIndex(idx)}
                     >
-                      <img src={`http://localhost:8000${img.image_url}`} alt={`Фото ${idx + 1}`} />
+                      <img 
+                        src={`http://localhost:8000${img.image_url}`} 
+                        alt={`Фото ${idx + 1}`}
+                        onError={(e) => {
+                          e.target.src = '/placeholder-thumb.jpg';
+                        }}
+                      />
                     </div>
                   ))}
                 </div>

@@ -965,3 +965,115 @@
     grid-column: span 1;
   }
 }
+/* Кнопка создания договора */
+.footer-btn.contract {
+  background: #8b5cf6;
+  color: white;
+}
+
+.footer-btn.contract:hover {
+  background: #7c3aed;
+  transform: translateY(-2px);
+}
+
+/* Стили для ContractForm */
+.modal-content.contract-modal {
+  max-width: 650px;
+}
+
+.info-banner {
+  background: #e0f2fe;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 20px 0;
+}
+
+.info-banner ul {
+  margin-top: 8px;
+  padding-left: 20px;
+}
+
+.info-banner li {
+  font-size: 13px;
+  color: #0c4a6e;
+  margin: 4px 0;
+}
+
+.success-state {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.success-state h4 {
+  font-size: 20px;
+  margin: 16px 0 8px;
+  color: #0f172a;
+}
+
+.success-state p {
+  color: #64748b;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+/* ============================================ */
+/* СПЕЦИФИЧНЫЕ СТИЛИ ДЛЯ CONTRACT FORM (только для договоров) */
+/* ============================================ */
+
+.contract-form-section {
+  margin-bottom: 24px;
+}
+
+.contract-form-section h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #0f172a;
+}
+
+.contract-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.contract-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contract-form-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.contract-form-group input,
+.contract-form-group textarea {
+  padding: 10px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.contract-form-group input:focus,
+.contract-form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.contract-form-group small {
+  font-size: 11px;
+  color: #94a3b8;
+}

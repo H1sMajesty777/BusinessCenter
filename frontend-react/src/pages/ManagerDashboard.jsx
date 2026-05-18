@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import ContractForm from '../components/ContractForm';
 import api from '../services/api';
 import { 
   FileText, FileCheck, CheckCircle, XCircle, Clock, 
@@ -11,6 +12,7 @@ import {
   TrendingUp, TrendingDown, AlertCircle, Archive, Star
 } from 'lucide-react';
 import '../styles/managerDashboard.css';
+
 
 const ManagerDashboard = () => {
   const { user } = useAuth();
@@ -26,6 +28,8 @@ const ManagerDashboard = () => {
   const [newApplicationsCount, setNewApplicationsCount] = useState(0);
   const [statusChangeLoading, setStatusChangeLoading] = useState(false);
   const [copiedField, setCopiedField] = useState(null);
+  const [showContractForm, setShowContractForm] = useState(false);
+  const [selectedAppForContract, setSelectedAppForContract] = useState(null);
 
   // Статусы заявок
   const statuses = [
@@ -544,6 +548,19 @@ const ManagerDashboard = () => {
                   Одобрить заявку
                 </button>
               )}
+              {selectedApplication.status_id === 2 && (
+                <button 
+                  className="footer-btn contract"
+                  onClick={() => {
+                    setSelectedAppForContract(selectedApplication);
+                    setShowContractForm(true);
+                    setShowAppModal(false);
+                  }}
+                >
+                  <FileCheck size={16} />
+                  Создать договор
+                </button>
+              )}
               <button className="footer-btn secondary" onClick={() => setShowAppModal(false)}>
                 Закрыть
               </button>
@@ -616,6 +633,19 @@ const ManagerDashboard = () => {
             </div>
           </div>
         </div>
+      )}
+      {showContractForm && selectedAppForContract && (
+        <ContractForm
+          application={selectedAppForContract}
+          onClose={() => {
+            setShowContractForm(false);
+            setSelectedAppForContract(null);
+          }}
+          onSuccess={() => {
+            loadApplications();
+            loadContracts();
+          }}
+        />
       )}
     </div>
   );

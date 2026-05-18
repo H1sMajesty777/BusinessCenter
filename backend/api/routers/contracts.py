@@ -43,69 +43,100 @@ def require_admin_or_manager(current_user: dict):
 
 @router.post("", status_code=201, response_model=dict)
 @limiter.limit(RATE_LIMITS["authenticated"])
-def create_contract(request: Request, contract: ContractCreate = Body(...), current_user: dict = Depends(get_current_user)):
-    """
-    Создание договора аренды
-    Доступ: Админ/Менеджер
-    """
+def create_contract(request: Request, contract: ContractCreate, current_user: dict = Depends(get_current_user)):
     require_admin_or_manager(current_user)
     
     conn = get_db()
     cursor = conn.cursor()
     
     try:
-        # Проверка что заявка существует
-        cursor.execute("SELECT id FROM applications WHERE id = %s", (contract.application_id,))
-        if not cursor.fetchone():
+        # Проверка заявки
+        cursor.execute("SELECT id, status_id FROM applications WHERE id = %s", (contract.application_id,))
+        app = cursor.fetchone()
+        if not app:
             raise HTTPException(status_code=404, detail="Заявка не найдена")
         
-        # Проверка что офис существует
-        cursor.execute("SELECT id FROM offices WHERE id = %s", (contract.office_id,))
-        if not cursor.fetchone():
+        if app['status_id'] != 2:
+            raise HTTPException(status_code=400, detail="Заявка должна быть одобрена перед созданием договора")
+        
+        # Проверка офиса
+        cursor.execute("SELECT id, is_free, price_per_month FROM offices WHERE id = %s", (contract.office_id,))
+        office = cursor.fetchone()
+        if not office:
             raise HTTPException(status_code=404, detail="Офис не найден")
         
-        # Проверка что пользователь существует
-        cursor.execute("SELECT id FROM users WHERE id = %s", (contract.user_id,))
-        if not cursor.fetchone():
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        if not office['is_free']:
+            raise HTTPException(status_code=400, detail="Офис уже арендован")
         
-        # Создание договора (status_id=4 = действует)
-        cursor.execute(
-            """INSERT INTO contracts (application_id, user_id, office_id, start_date, end_date, total_amount, status_id) 
-               VALUES (%s, %s, %s, %s, %s, %s, 4) RETURNING id, signed_at""",
-            (contract.application_id, contract.user_id, contract.office_id, 
-             contract.start_date, contract.end_date, contract.total_amount)
-        )
-        log_insert(
-            user_id=current_user.get("sub"),
-            table_name="contracts",
-            record_id=row['id'],
-            new_values={
-                "application_id": contract.application_id,
-                "user_id": contract.user_id,
-                "office_id": contract.office_id,
-                "total_amount": contract.total_amount
-            },
-            conn=conn
-        )
-        row = cursor.fetchone()
+        # Создание договора
+        cursor.execute("""
+            INSERT INTO contracts (application_id, user_id, office_id, start_date, end_date, total_amount, status_id, signed_at)
+            VALUES (%s, %s, %s, %s, %s, %s, 4, NOW())
+            RETURNING id, start_date, end_date
+        """, (
+            contract.application_id,
+            contract.user_id,
+            contract.office_id,
+            contract.start_date,
+            contract.end_date,
+            contract.total_amount
+        ))
         
-        # Обновляем статус заявки на "одобрено" (status_id=2)
-        cursor.execute("UPDATE applications SET status_id = 2, reviewed_at = %s WHERE id = %s", 
-                      (datetime.now(), contract.application_id))
+        result = cursor.fetchone()
+        contract_id = result['id']
+        start_date = result['start_date']
+        end_date = result['end_date']
         
-        # Обновляем статус офиса на "сдан" (is_free=False)
-        cursor.execute("UPDATE offices SET is_free = FALSE WHERE id = %s", (contract.office_id,))
+        # ========== АВТОМАТИЧЕСКОЕ СОЗДАНИЕ ПЛАТЕЖЕЙ ==========
+        monthly_amount = contract.monthly_amount if contract.monthly_amount else office['price_per_month']
+        
+        # Генерируем все месяцы между start_date и end_date
+        current_date = start_date
+        payment_number = 1
+        
+        while current_date <= end_date:
+            cursor.execute("""
+                INSERT INTO payments (contract_id, amount, payment_date, status_id, payment_number, description)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (
+                contract_id,
+                monthly_amount,
+                current_date,
+                9,  # status_id = 9 (ожидает оплаты)
+                payment_number,
+                f"Арендная плата за {current_date.strftime('%B %Y')}"
+            ))
+            
+            # Переходим к следующему месяцу
+            if current_date.month == 12:
+                current_date = current_date.replace(year=current_date.year + 1, month=1)
+            else:
+                current_date = current_date.replace(month=current_date.month + 1)
+            payment_number += 1
+        
+        # Обновляем статус заявки
+        cursor.execute("""
+            UPDATE applications 
+            SET status_id = 4, reviewed_at = NOW() 
+            WHERE id = %s
+        """, (contract.application_id,))
+        
+        # Обновляем статус офиса
+        cursor.execute("""
+            UPDATE offices SET is_free = FALSE WHERE id = %s
+        """, (contract.office_id,))
         
         conn.commit()
         
         return {
-            "id": row['id'], 
-            "message": "Договор создан", 
-            "status": "действует",
-            "signed_at": str(row['signed_at']) if row['signed_at'] else None
+            "id": contract_id,
+            "message": "Договор успешно создан",
+            "payments_created": payment_number - 1,
+            "monthly_amount": monthly_amount,
+            "application_status": "updated",
+            "office_status": "rented"
         }
-    
+        
     finally:
         cursor.close()
         conn.close()

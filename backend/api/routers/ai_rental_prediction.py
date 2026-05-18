@@ -629,6 +629,64 @@ def get_model_dashboard(request: Request, current_user: dict = Depends(get_curre
         cursor.close()
         conn.close()
 
+@router.get("/explain/{office_id}", response_model=Dict[str, Any])
+@limiter.limit(RATE_LIMITS["ml_predict"])
+def explain_prediction(
+    request: Request,
+    office_id: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """Подробное объяснение прогноза для офиса"""
+    require_admin_or_manager(current_user)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        result = rental_predictor.predict_probability(conn, office_id)
+        
+        if "error" in result:
+            raise HTTPException(status_code=404, detail=result["error"])
+        
+        # Получаем детальную статистику офиса
+        cursor.execute("""
+            SELECT 
+                o.office_number, o.floor, o.area_sqm, o.price_per_month,
+                (SELECT COUNT(*) FROM office_views WHERE office_id = %s) as total_views,
+                (SELECT COUNT(*) FROM applications WHERE office_id = %s) as total_applications,
+                (SELECT COUNT(*) FROM contracts WHERE office_id = %s) as total_contracts,
+                (SELECT COUNT(*) FROM offices WHERE floor = o.floor AND is_free = TRUE) as free_on_floor,
+                (SELECT COUNT(*) FROM offices WHERE floor = o.floor) as total_on_floor
+            FROM offices o
+            WHERE o.id = %s
+        """, (office_id, office_id, office_id, office_id))
+        
+        office_stats = cursor.fetchone()
+        
+        if not office_stats:
+            raise HTTPException(status_code=404, detail="Офис не найден")
+        
+        competition_ratio = office_stats['free_on_floor'] / office_stats['total_on_floor'] if office_stats['total_on_floor'] > 0 else 1
+        
+        result['detailed_stats'] = {
+            "office_number": office_stats['office_number'],
+            "floor": office_stats['floor'],
+            "area_sqm": float(office_stats['area_sqm']),
+            "price_per_month": float(office_stats['price_per_month']),
+            "price_per_sqm": round(float(office_stats['price_per_month']) / float(office_stats['area_sqm']), 2),
+            "total_views": office_stats['total_views'] or 0,
+            "total_applications": office_stats['total_applications'] or 0,
+            "total_contracts": office_stats['total_contracts'] or 0,
+            "competition_on_floor": f"{office_stats['free_on_floor']} / {office_stats['total_on_floor']}",
+            "competition_ratio": round(competition_ratio, 2)
+        }
+        
+        return result
+        
+    finally:
+        cursor.close()
+        conn.close()
+
 
 def _days_since(date_str: str) -> Optional[int]:
     """Количество дней с указанной даты"""
